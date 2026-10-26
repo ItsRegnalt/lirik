@@ -1,13 +1,16 @@
 import {words,syllabify,analyze,findRhymes} from './turkish.js';
 import {RhythmEngine} from './audio.js';
 import {lineEndings} from './editor.js';
+import {isHeading,lyricsText,cleanAlternatives,alternativesAppendix} from './writing.js';
+import {initWriting} from './writing-ui.js';
 const $=id=>document.getElementById(id), draft=$('draft'), title=$('draft-title');
-let toastTimer,saveTimer,pendingReplace,installPrompt,returnToDraft;
+let toastTimer,saveTimer,pendingReplace,installPrompt,returnToDraft,writingTools;
+let variantGroups=[];
 function notify(message){$('toast').textContent=message;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),3500);}
 function node(tag,cls,text){const el=document.createElement(tag);if(cls)el.className=cls;if(text!==undefined)el.textContent=text;return el;}
 function saveState(text,state){$('save-state').textContent=text;$('save-state').dataset.state=state;}
-function save(){try{localStorage.setItem('sozora-draft',JSON.stringify({title:title.value,text:draft.value}));saveState('Cihaza kaydedildi','saved');}catch{saveState('Kaydedilemedi · Metni indir','error');}}
-try{const saved=JSON.parse(localStorage.getItem('sozora-draft')||'null');if(saved){draft.value=String(saved.text||'');title.value=String(saved.title||'');saveState('Cihaza kaydedildi','saved');}}catch{}
+function save(){try{localStorage.setItem('sozora-draft',JSON.stringify({title:title.value,text:draft.value,alternatives:variantGroups}));saveState('Cihaza kaydedildi','saved');}catch{saveState('Kaydedilemedi · Metni indir','error');}}
+try{const saved=JSON.parse(localStorage.getItem('sozora-draft')||'null');if(saved){draft.value=String(saved.text||'');title.value=String(saved.title||'');variantGroups=cleanAlternatives(saved.alternatives);saveState('Cihaza kaydedildi','saved');}}catch{}
 function empty(container){const div=node('div','empty-analysis');div.append(node('p','','Henüz metin yok.'));container.append(div);}
 const visibleEndings=new IntersectionObserver(entries=>{for(const entry of entries)entry.target.tabIndex=entry.isIntersecting&&entry.intersectionRatio>=.99?0:-1;},{root:$('ending-overlay'),threshold:[0,1]});
 let mirroredLines=[];
@@ -15,7 +18,7 @@ function syncEndings(){const mirror=$('ending-mirror');mirror.style.width=draft.
 function mirrorText(text){const span=node('span','',text);span.setAttribute('aria-hidden','true');return span;}
 function endingLine(text){
  const row=node('span');let offset=0;
- for(const ending of lineEndings(text)){
+ for(const ending of (isHeading(text)?[]:lineEndings(text))){
   row.append(mirrorText(text.slice(offset,ending.start)));
   const button=node('button','ending-word',ending.word);button.type='button';button.tabIndex=-1;button.setAttribute('aria-label',`${ending.word} için kafiye bul`);
   button.onpointerdown=e=>e.preventDefault();
@@ -39,7 +42,7 @@ document.fonts.ready.then(syncEndings);
 let lineStats=new Map();
 function render(updateEndings=true){
   if(updateEndings)renderEndings();
-  const text=draft.value,nextStats=new Map();let wordCount=0,lineCount=0,syllablesCount=0,uncertain=false;
+  const text=lyricsText(draft.value),nextStats=new Map();let wordCount=0,lineCount=0,syllablesCount=0,uncertain=false;
   for(const line of text.split('\n')){let stats=lineStats.get(line)||nextStats.get(line);if(!stats){const row=analyze(line)[0];stats={words:words(line).length,syllables:row.syllables,uncertain:row.uncertain,active:!!line.trim()};}nextStats.set(line,stats);wordCount+=stats.words;syllablesCount+=stats.syllables;lineCount+=Number(stats.active);uncertain ||= stats.uncertain;}
   lineStats=nextStats;$('word-count').textContent=wordCount;$('line-count').textContent=lineCount;$('syllable-count').textContent=syllablesCount+(uncertain?'+':'');$('syllable-count').title=uncertain?'Sayı ve kısaltmalar sayılmadı; toplam eksik olabilir.':'';
   if($('drawer-analysis').hidden)return;
@@ -102,11 +105,11 @@ function search(){const q=$('rhyme-query').value.trim(),out=$('rhyme-results');o
 $('rhyme-form').onsubmit=e=>{e.preventDefault();search();};$('rhyme-query').addEventListener('input',e=>{if(!e.isComposing)search();});$('rhyme-query').addEventListener('compositionend',search);$('rhyme-kind').onchange=search;document.querySelectorAll('[data-query]').forEach(b=>b.onclick=()=>{$('rhyme-query').value=b.dataset.query;search();});
 async function copyText(text){if(!text.trim()){notify('Önce birkaç kelime yaz.');return;}try{await navigator.clipboard.writeText(text);notify('Kopyalandı.');}catch{notify('Kopyalanamadı. Metni seçip cihazının Kopyala komutunu kullan.');}}
 $('copy').onclick=()=>copyText(draft.value);
-function downloadDraft(){if(!draft.value.trim()&&!title.value.trim()){notify('Önce birkaç kelime yaz.');return;}const blob=new Blob([title.value?`${title.value}\n\n${draft.value}`:draft.value],{type:'text/plain;charset=utf-8'}),url=URL.createObjectURL(blob),a=node('a');a.href=url;a.download=(title.value||'Lirik-taslak').replace(/[<>:"/\\|?*\x00-\x1f]/g,'-').slice(0,80)+'.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+function downloadDraft(){if(!draft.value.trim()&&!title.value.trim()&&!variantGroups.length){notify('Önce birkaç kelime yaz.');return;}const blob=new Blob([(title.value?`${title.value}\n\n${draft.value}`:draft.value)+alternativesAppendix(variantGroups)],{type:'text/plain;charset=utf-8'}),url=URL.createObjectURL(blob),a=node('a');a.href=url;a.download=(title.value||'Lirik-taslak').replace(/[<>:"/\\|?*\x00-\x1f]/g,'-').slice(0,80)+'.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 $('download').onclick=downloadDraft;$('download-before-replace').onclick=downloadDraft;
-function replaceDraft(fn){if(draft.value.trim()||title.value.trim()){pendingReplace=fn;$('replace-dialog').showModal();}else fn();}
+function replaceDraft(fn){if(draft.value.trim()||title.value.trim()||variantGroups.length){pendingReplace=fn;$('replace-dialog').showModal();}else fn();}
 $('cancel-replace').onclick=()=>{$('replace-dialog').close();pendingReplace=null;};$('confirm-replace').onclick=()=>{$('replace-dialog').close();pendingReplace?.();pendingReplace=null;};
-$('new-draft').onclick=()=>replaceDraft(()=>{draft.value='';title.value='';save();render();closeTools();draft.focus();});
+$('new-draft').onclick=()=>replaceDraft(()=>{draft.value='';title.value='';variantGroups=[];clearTimeout(saveTimer);writingTools?.reset();save();render();closeTools();draft.focus();});
 const engine=new RhythmEngine(beat=>{[...document.querySelectorAll('.beat-dots i')].forEach((el,i)=>el.classList.toggle('active',i===beat));},playing=>{$('play').textContent=playing?'Durdur':'Başlat';$('audio-state').textContent=playing?'Çalıyor':'Duruşta';$('play').setAttribute('aria-pressed',String(playing));$('nav-rhythm').classList.toggle('playing',playing);$('nav-rhythm').setAttribute('aria-label',playing?'Metronom, çalıyor':'Metronom');});
 function configure(){engine.configure({bpm:$('bpm').value,volume:$('volume').value/100,tone:$('metronome-sound').value});try{localStorage.setItem('lirik-metronome-settings',JSON.stringify({bpm:engine.bpm,volume:engine.volume,tone:engine.tone}));}catch{}}
 function tempo(value){const n=Math.round(Math.min(240,Math.max(30,Number(value)||90)));$('bpm').value=n;$('tempo-range').value=n;configure();}
@@ -161,3 +164,5 @@ $('panel-size').onclick=()=>{const compact=document.querySelector('.workspace').
 // visualViewport follows the keyboard on mobile browsers; short desktop windows stay unchanged.
 function fitKeyboard(){const viewport=window.visualViewport;const compact=matchMedia('(max-width:700px)').matches&&((viewport?.height||innerHeight)<480);document.documentElement.classList.toggle('keyboard-open',compact);document.documentElement.style.setProperty('--editor-viewport',`${viewport?.height||innerHeight}px`);}
 window.visualViewport?.addEventListener('resize',fitKeyboard);window.addEventListener('resize',fitKeyboard);document.addEventListener('focusin',fitKeyboard);document.addEventListener('focusout',()=>requestAnimationFrame(fitKeyboard));fitKeyboard();
+
+writingTools=initWriting({draft,getGroups:()=>variantGroups,save,notify,copyText});

@@ -66,3 +66,12 @@
 - Önbellek lirik-v16; eski kurulumların yeni simgeyi alması için kaynak sürümleri yenilendi.
 - Kanıt: 46/46 Node testi; yerel Chrome 375×812 açık/koyu tema, taşma ve çevrimdışı logo yükleme kontrolü geçti. İki PNG RGBA/alpha doğrulandı. Gerçek iOS/Android ana ekran simgesi denenmedi.
 - Geri dönüş: f578c7b. Yedek: backup/2026-10-26-selected-logo/. RTK global ayarları değiştirilmedi.
+
+
+## Dize alternatifleri ve bölümler — 26 Ekim 2026
+- Seçili dizeye elle alternatif kaydetme, sürümler arasında geçiş ve tek işlem geri alma eklendi. Aynı metinli dizeler alternatif grubunu paylaşır; satır silinse bile alternatifler saklanır. TXT indirme tüm alternatifleri ayrı ekte içerir.
+- Kıta, Nakarat ve Köprü ekleme; bölümüne gitme, taşıma ve çoğaltma eklendi. Bölüm başlıkları hece/kelime/dize ve uyak analizinden dışlanır. Eski taslaklar korunur; yeni söz açma uyarısı alternatiflerin silineceğini belirtir.
+- Mevcut metronomun tempoda prova işlevi yeni özellik olarak tekrar eklenmedi. Yeni bağımlılık veya çevrimiçi servis yok; önbellek lirik-v17.
+- Yayın dosyaları 873.957 bayt ham / ayrı gzip toplamı 522.739 bayt ölçüldü; sayfa ve README yaklaşık 515 KB indirme / 855 KB çevrimdışı dosya olarak yuvarlandı. Sözler ve tarayıcı ekleri hariç; RAM ölçümü değil.
+- Kanıt: 52/52 Node testi; verify-writing.cjs Chrome testinde eski taslak, alternatif geçişi/yenileme/arşiv, bölüm taşıma/çoğaltma, indirme, iptal, XSS, 320×568 / 375×288 / 1280×900 yerleşim ve çevrimdışı yeniden açma geçti. Gerçek telefon klavyesi ve iOS denenmedi.
+- Geri dönüş: 98fea50. Yedek: backup/2026-10-26-writing-tools/. RTK global ayarları değiştirilmedi.

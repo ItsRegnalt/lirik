@@ -27,7 +27,7 @@ jobs:
       - name: Prepare public files
         run: |
           mkdir _site
-          cp index.html style.css app.js audio.js editor.js turkish.js lexicon.js sw.js manifest.webmanifest icon.svg icon-192.png icon-512.png inter-variable.woff2 Inter-OFL.txt Zemberek-LICENSE.txt THIRD_PARTY.md _site/
+          cp index.html style.css app.js audio.js editor.js writing.js writing-ui.js turkish.js lexicon.js sw.js manifest.webmanifest icon.svg icon-192.png icon-512.png inter-variable.woff2 Inter-OFL.txt Zemberek-LICENSE.txt THIRD_PARTY.md _site/
           cp -r sounds _site/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
