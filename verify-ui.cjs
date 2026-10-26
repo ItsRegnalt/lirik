@@ -1,0 +1,24 @@
+const {chromium}=require('C:/Users/Doğukan/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const assert=require('node:assert/strict');
+(async()=>{
+ const browser=await chromium.launch({channel:'chrome',headless:true});
+ const context=await browser.newContext({viewport:{width:1440,height:1100}});const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto(process.env.APP_URL||'http://127.0.0.1:4173/');await page.locator('#sample').click();
+ assert.equal(await page.locator('#scheme').textContent(),'A B A B');
+ await page.locator('#theme-toggle').click();assert.equal(await page.locator('html').getAttribute('data-theme'),'dark');
+ await page.screenshot({path:'test-results/desktop-dark.png',fullPage:true});
+ await page.reload();assert.equal(await page.locator('html').getAttribute('data-theme'),'dark');assert.match(await page.locator('#draft').inputValue(),/deniz/);
+ await page.locator('#rhyme-query').fill('deniz');await page.locator('#rhyme-form').evaluate(el=>el.requestSubmit());assert.ok(await page.locator('.chip').count());
+ await page.locator('#play').click();await page.waitForTimeout(700);assert.equal(await page.locator('#audio-state').textContent(),'Çalıyor');await page.locator('#play').click();
+ await page.locator('#play').click();await page.waitForFunction(()=>document.getElementById('audio-state').textContent==='Çalıyor');assert.equal(await page.locator('#audio-state').textContent(),'Çalıyor');await page.locator('#play').click();
+ await page.locator('#bpm').fill('999');await page.locator('#bpm').dispatchEvent('change');assert.equal(await page.locator('#bpm').inputValue(),'240');
+ await page.locator('#draft').fill('<img src=x onerror=alert(1)>');assert.equal(await page.locator('#analysis-rows img').count(),0);
+ await page.locator('#new-draft').click();assert.equal(await page.locator('#replace-dialog').evaluate(x=>x.open),true);await page.locator('#cancel-replace').click();
+ await page.locator('#sample').click();await page.locator('#confirm-replace').click();
+ await page.locator('#theme-toggle').click();await page.setViewportSize({width:375,height:812});await page.screenshot({path:'test-results/mobile-light.png',fullPage:true});
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+ await page.locator('#install').click();assert.equal(await page.locator('#install-dialog').evaluate(x=>x.open),true);await page.locator('#close-install').click();
+ await page.evaluate(()=>navigator.serviceWorker.ready);await page.reload();await page.waitForFunction(()=>!!navigator.serviceWorker.controller);await context.setOffline(true);await page.reload();assert.equal(await page.locator('#scheme').textContent(),'A B A B');
+ await context.setOffline(false);assert.deepEqual(errors,[]);console.log('UI PASS: layout, theme, persistence, rhyme, audio restart, tempo clamp, XSS, dialogs, PWA offline');await browser.close();
+})().catch(e=>{console.error(e);process.exit(1)});
+
