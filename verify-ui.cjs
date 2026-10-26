@@ -4,6 +4,7 @@ const assert=require('node:assert/strict');
  const browser=await chromium.launch({channel:'chrome',headless:true});
  const context=await browser.newContext({viewport:{width:1440,height:1100}});const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto(process.env.APP_URL||'http://127.0.0.1:4173/');await page.locator('#sample').click();
+ const signal=await page.evaluate(async()=>{const {RhythmEngine}=await import('./audio.js');const ctx=new OfflineAudioContext(1,22050,44100);const e=new RhythmEngine();e.ctx=ctx;e.bus=ctx.createGain();e.bus.connect(ctx.destination);e.sound('accent',.01);e.sound('kick',.12);const buffer=await ctx.startRendering();const d=buffer.getChannelData(0);return {peak:Math.max(...d),tail:Math.max(...d.slice(18000))};});assert.ok(signal.peak>.1&&signal.peak<1);assert.equal(signal.tail,0);
  assert.equal(await page.locator('#scheme').textContent(),'A B A B');
  await page.locator('#theme-toggle').click();assert.equal(await page.locator('html').getAttribute('data-theme'),'dark');
  await page.screenshot({path:'test-results/desktop-dark.png',fullPage:true});

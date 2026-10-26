@@ -21,7 +21,7 @@ test('exact same terminal word checks preceding word',()=>{const r=analyze('deni
 test('verified shared suffix becomes redif, root remains rhyme',()=>{const r=analyze('gözlerim\nsözlerim');assert.ok(r.every(x=>x.redif==='lerim'));assert.equal(r[0].letter,r[1].letter);});
 test('multiword common ending is recognized',()=>{const r=analyze('güzel sözler\nözel sözler');assert.ok(r.every(x=>x.redif==='sözler'));});
 test('rhyme groups do not merge transitively across weak links',()=>{const r=analyze('deniz\ntemiz\naziz');assert.equal(r[0].letter,r[1].letter);});
-test('labels expand beyond Z',()=>{assert.ok(analyze('a\nb\nc').every(x=>x.letter));});
+test('labels expand beyond Z',()=>{const r=analyze([...'abcçdefgğhıijklmnoöprsştuüvyz'].join('\n'));assert.equal(r[26].letter,'AA');assert.equal(r[28].letter,'AC');});
 test('long multisyllabic word handled',()=>{assert.equal(syllabify('başarısızlık').length,5);});
 test('XSS-like markup remains plain input',()=>{assert.equal(words('<script>alert(1)</script>')[0],'script');assert.equal(analyze('<img src=x>').length,1);});
 test('findRhymes obeys limit and kind',()=>{assert.ok(findRhymes('deniz',{limit:2}).length<=2);assert.ok(findRhymes('deniz',{kind:'tam'}).every(x=>x.type==='tam'));});
