@@ -104,7 +104,7 @@ function tempo(value){const n=Math.round(Math.min(240,Math.max(30,Number(value)|
 $('bpm').onchange=()=>tempo($('bpm').value);$('tempo-range').oninput=()=>tempo($('tempo-range').value);$('tempo-up').onclick=()=>tempo(Number($('bpm').value)+1);$('tempo-down').onclick=()=>tempo(Number($('bpm').value)-1);$('volume').oninput=configure;
 try{const tone=localStorage.getItem('lirik-metronome-sound');if(['classic','low','high'].includes(tone))$('metronome-sound').value=tone;}catch{}
 try{const settings=JSON.parse(localStorage.getItem('lirik-metronome-settings')||'null');if(settings){if(['classic','low','high'].includes(settings.tone))$('metronome-sound').value=settings.tone;if(Number.isFinite(settings.volume))$('volume').value=Math.round(Math.max(0,Math.min(1,settings.volume))*100);tempo(settings.bpm);}}catch{}
-const soundNames={classic:'Ahşap',low:'Rimshot',high:'Dijital'};
+const soundNames={classic:'Klasik',low:'Ahşap',high:'Hi-hat'};
 function updateSoundPicker(){const selected=$('metronome-sound').value;$('sound-name').textContent=soundNames[selected];document.querySelectorAll('[data-sound]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.sound===selected)));}
 updateSoundPicker();
 for(const button of document.querySelectorAll('[data-sound]'))button.onclick=()=>{$('metronome-sound').value=button.dataset.sound;configure();updateSoundPicker();$('sound-picker').open=false;$('sound-picker').querySelector('summary').focus();try{localStorage.setItem('lirik-metronome-sound',button.dataset.sound);}catch{}};

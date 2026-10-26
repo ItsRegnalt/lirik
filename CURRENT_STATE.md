@@ -43,3 +43,10 @@
 - Fiziksel hoparlör, Bluetooth, gerçek mobil klavye, iOS kurulumu ve ekran okuyucu denenmedi. Sesin beğenilmesi ölçülmüş sayılmaz.
 - Geri dönüş: a701286; kaynak yedeği backup/2026-10-26-sound-picker/, eski ses dosyaları Git geçmişinde. RTK global hook değiştirilmedi.
 - Aynı beş inceleme rolü beşer tur tamamladı (25 senaryo incelemesi): reports/2026-10-26-ikinci-inceleme.md. Söz yazma rolünde yeni tarayıcı çalışmadı; kaynak incelemesi ve Node kanıtı açıkça ayrıldı. Yeni öneriler: noktalı kısaltmalar, yaygınlık sıralaması, gerçek klavye alanı ve dize sonu odak akışı.
+
+## Doğal metronom kayıtları ve öncelik tartışması — 26 Ekim 2026
+- Klasik mekanik metronom, akustik ahşap blok ve TR-808 kapalı hi-hat kayıtları eklendi. Üçü de CC0; kaynak ve kesme/normalleştirme bilgisi THIRD_PARTY.md içinde. Ableton/FL özgün dosyaları kullanılmadı.
+- Sesler toplam 46.878 bayt. Yaklaşık 510 KB indirme / 845 KB çevrimdışı dosya; tarayıcı ekleri ve sözler hariç. Önbellek lirik-v14.
+- Kanıt: 43/43 Node testi; verify-ui.cjs ve verify-improvements.cjs yerel Chrome kontrolleri geçti. Çevrimdışı önizleme ve üç ayrı ses sinyali doğrulandı. Fiziksel hoparlör/kulaklık, gerçek mobil klavye, iOS ve ekran okuyucu denenmedi; eşit tepe seviyesi eşit algılanan ses yüksekliği anlamına gelmez.
+- Aynı beş ajan üçer tur karşılıklı değerlendirdi (15 tur). Seçim listesi ve elenen öneriler: reports/2026-10-26-oncelik-tartismasi.md. Bu öneriler kullanıcı seçmeden uygulanmadı.
+- Geri dönüş: 261bb43. Yerel yedek: backup/2026-10-26-natural-sounds/. RTK global ayarı değiştirilmedi.
