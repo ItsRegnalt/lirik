@@ -19,3 +19,6 @@
 - Kullanıcının açık sekmesinde app.js:38 null onclick hatası doğrulandı: yeni HTML eski sample koduyla eşleşmiş. HTML CSS/JS v=3 ile sürümlendi; SW v3 kurulumda reload, ağ isteklerinde no-cache kullanır. Eski sürümsüz scripti tuzaklayan regresyon ve offline panel testleri eklendi.
 
 - Uygulama adı Lirik olarak seçildi. Görünen ad, PWA ve indirme adı güncellendi; mevcut taslakları korumak için sozora-draft/sozora-theme depolama anahtarları korundu. SW lirik-v4; sürümlü CSS/JS v4. Depo adı değişimi otomatik onay incelemesince açık yetki olmadığı gerekçesiyle reddedildi; mevcut adreste yayınlanır.
+
+- Defter revizyonu v5: üst alt başlık kaldırıldı, başlık kalın, kayıt durumu anlamlı/renkli. Bütün araçlar tek alanda açılır; masaüstünde sağda, mobilde defterin altında; defter düzenlenebilir ve araç çubuğu sabit görünür. Yeni söz yaz / Sözü kopyala adları güncellendi. Alt bölümde ana ekrana ekle ve vivid creative works © 2025 yer alır. Tema düğmesinden dairesel geçiş (azaltılmış harekete saygılı) eklendi. SVG L/şarkı satırları favicon ve PWA ikonları güncellendi.
+- Kanıt: 32 Node testi ve Chrome UI senaryosu geçti; 375/320 px taşma, açık analizde yazma/araç değiştirme, kayıt, tema, ses ve çevrimdışı kontrolleri. Fiziksel mobil klavye denenmedi. Görseller test-results/mobile-analysis.png ve desktop-analysis.png. Geri dönüş: e88fbf8.
