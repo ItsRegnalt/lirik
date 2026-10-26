@@ -60,3 +60,9 @@
 - L + nota motifiyle şeffaf SVG favicon; 192/512 PNG yedeklerinin RGBA/alpha kanalı doğrulandı. Önbellek lirik-v15. Dosyalar yaklaşık 509 KB gzip / 841 KB ham; sayfadaki yaklaşık 510/845 KB bilgisi geçerli.
 - Kanıt: 46/46 Node testi; verify-ui.cjs, verify-improvements.cjs ve verify-approved.cjs Chrome kontrolleri geçti. Son değişiklikler sonrası testler yeniden çalıştırılır.
 - Geri dönüş: 159994e. Yedek: backup/2026-10-26-approved-improvements/. RTK hook kurulmadı; global ayarlar değiştirilmedi.
+
+## Seçilen L + nota logosu — 26 Ekim 2026
+- Imagegen ile seçilen üç mor satır ve altın kuyruklu nota biçimi temiz SVG olarak aktarıldı; renkli kenar artıkları kaldırıldı. Üst başlık, favicon ve 192/512 uygulama simgeleri güncellendi. Saydam arka plan korundu.
+- Önbellek lirik-v16; eski kurulumların yeni simgeyi alması için kaynak sürümleri yenilendi.
+- Kanıt: 46/46 Node testi; yerel Chrome 375×812 açık/koyu tema, taşma ve çevrimdışı logo yükleme kontrolü geçti. İki PNG RGBA/alpha doğrulandı. Gerçek iOS/Android ana ekran simgesi denenmedi.
+- Geri dönüş: f578c7b. Yedek: backup/2026-10-26-selected-logo/. RTK global ayarları değiştirilmedi.
