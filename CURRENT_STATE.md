@@ -14,3 +14,4 @@
 
 - Mobil defter revizyonu: tanıtım ve örnek dizeler kaldırıldı. Tam ekran çizgili defter, sade araç adları ve iki yandan açılan erişilebilir paneller eklendi. Metronom deftere dönünce çalmaya devam eder. Tema, yerel taslak ve 2025 korundu.
 - Revizyon kanıtı: 32 Node testi; Chrome 375/320 px, panel/Escape/odak, metronomla yazma, kalıcılık ve çevrimdışı yenileme. Görseller test-results/mobile-light.png ve mobile-analysis.png. Fiziksel telefon klavyesi denenmedi. Geri dönüş: önceki main sürümü 238592d.
+- 751a88c yayımlandı; yeni panel düzeni canlı Pages sayfasında doğrulandı. Canlı Chrome senaryosu da başarılı.
