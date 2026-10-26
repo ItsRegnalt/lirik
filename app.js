@@ -90,7 +90,7 @@ const installGuides = [
 ];
 const installSources = ['https://support.apple.com/en-gb/guide/iphone/iphea86e5236/ios', 'https://support.google.com/chrome/answer/9658361?co=GENIE.Platform%3DiOS', 'https://support.google.com/chrome/answer/9658361?co=GENIE.Platform%3DAndroid'];
 const nativeInstall=node('button','primary','Lirik’i yükle');nativeInstall.type='button';nativeInstall.id='native-install';nativeInstall.hidden=true;$('install-instructions').append(nativeInstall);
-installGuides.forEach(([title,body],i)=>{const section=node('section');section.append(node('h3','',title),node('p','',body));if(installSources[i]){const link=node('a','','Resmî rehber ↗');link.href=installSources[i];link.target='_blank';link.rel='noopener noreferrer';section.append(link);}$('install-instructions').append(section);});
+installGuides.forEach(([title,body],i)=>{const section=node('section');section.append(node('h3','',title),node('p','',body));if(installSources[i]){const link=node('a','','Resmi rehber ↗');link.href=installSources[i];link.target='_blank';link.rel='noopener noreferrer';section.append(link);}$('install-instructions').append(section);});
 $('install-instructions').append(node('p','install-note','Menü adları sistem sürümüne göre değişebilir. iPhone’da seçenek yoksa Safari’yi dene. Ana ekran uygulaması ayrı depolama kullanabilir; geçmeden önce sözlerini indir. İlk çevrimiçi açılıştan sonra defter ve araçlar çevrimdışı çalışır.'));
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;nativeInstall.hidden=false;});
 window.addEventListener('appinstalled',()=>{installPrompt=null;nativeInstall.hidden=true;notify('Lirik ana ekrana eklendi.');});
@@ -99,12 +99,14 @@ $('install-help').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventD
 if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>notify('Çevrimdışı hazırlığı tamamlanamadı. İnternet bağlantını kontrol et.'));
 
 const openers=[...document.querySelectorAll('[data-open]')];
-let activeTool=null;
+let activeTool=null, toolOpeningTimer;
+function finishToolOpening(){clearTimeout(toolOpeningTimer);$('tool-dock').classList.remove('is-opening');}
+document.querySelector('.workspace').addEventListener('transitionend',e=>{if(e.target===e.currentTarget)finishToolOpening();});
 $('tool-dock').hidden=false;$('tool-dock').inert=true;
-function closeTools(restoreFocus=false){if(!activeTool)return;const opener=activeTool;$(opener.dataset.open).hidden=true;opener.setAttribute('aria-expanded','false');document.querySelector('.workspace').classList.remove('has-tools');$('tool-dock').inert=true;activeTool=null;if(restoreFocus)opener.focus();}
+function closeTools(restoreFocus=false){finishToolOpening();if(!activeTool)return;const opener=activeTool;$(opener.dataset.open).hidden=true;opener.setAttribute('aria-expanded','false');document.querySelector('.workspace').classList.remove('has-tools');$('tool-dock').inert=true;activeTool=null;if(restoreFocus)opener.focus();}
 for(const opener of openers){
  const panel=$(opener.dataset.open);$('tool-dock').append(panel);
- opener.onclick=()=>{const same=activeTool===opener;closeTools();if(same)return;activeTool=opener;panel.hidden=false;document.querySelector('.workspace').classList.add('has-tools');$('tool-dock').inert=false;opener.setAttribute('aria-expanded','true');};
+ opener.onclick=()=>{const same=activeTool===opener;closeTools();if(same)return;activeTool=opener;panel.hidden=false;document.querySelector('.workspace').classList.add('has-tools');$('tool-dock').inert=false;opener.setAttribute('aria-expanded','true');if(!reducedMotion.matches){$('tool-dock').classList.add('is-opening');toolOpeningTimer=setTimeout(finishToolOpening,300);}};
  panel.querySelector('[data-close]').onclick=()=>closeTools(true);
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.querySelector('dialog[open]'))closeTools(true);});
