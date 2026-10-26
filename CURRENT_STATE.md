@@ -9,5 +9,7 @@
 - Taslak verilerini korumak için mevcut cihaz depolama anahtarları sürer. Depo yolu değiştiği için eski ana ekran kısayolu yeniden eklenmelidir.
 - Kanıt: 38 Node testi; Chrome responsive yerleşim, ses sinyali, tercih/taslak kalıcılığı, canlı arama ve PWA çevrimdışı senaryosu geçti.
 - Fiziksel telefon hoparlörü ve iOS kurulumu denenmedi.
-- Geri dönüş: c383b9e kaynak sürümü; depo adı ve Pages ayarı ayrıca GitHub üzerinden geri alınabilir. Yerel orijinal yedek backup/ altında, Git dışında tutulur.
+- Geri dönüş: c383b9e kaynak sürümü; depo adı ve Pages ayarı ayrıca GitHub üzerinden geri alınabilir.
 - RTK uyarısı: global hook kurulu değil; global ayarlar değiştirilmedi.
+
+- Canlı Lirik adresinde aynı Chrome senaryosu ve çevrimdışı ses/kelime araması geçti. GitHub Tests ve Pages başarılı. Kelime listesi sabit kaynak sürümünden tekrar üretildi; SHA256 aynı.
