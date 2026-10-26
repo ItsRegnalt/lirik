@@ -6,7 +6,7 @@ function notify(message){$('toast').textContent=message;$('toast').classList.add
 function node(tag,cls,text){const el=document.createElement(tag);if(cls)el.className=cls;if(text!==undefined)el.textContent=text;return el;}
 function save(){try{localStorage.setItem('sozora-draft',JSON.stringify({title:title.value,text:draft.value}));$('save-state').textContent='Cihaza kaydedildi';}catch{$('save-state').textContent='Kaydedilemedi · İndir ile yedekle';}}
 try{const saved=JSON.parse(localStorage.getItem('sozora-draft')||'null');if(saved){draft.value=String(saved.text||'');title.value=String(saved.title||'');}}catch{}
-function empty(container){const div=node('div','empty-analysis');div.append(node('span','','Aa'),node('p','','Her dizenin bir izi var.'),node('small','','Yazmaya başladığında şema burada belirecek.'));container.append(div);}
+function empty(container){const div=node('div','empty-analysis');div.append(node('p','','Henüz metin yok.'));container.append(div);}
 function render(){
   const text=draft.value,rows=analyze(text),active=rows.filter(x=>x.line.trim());
   $('word-count').textContent=words(text).length;$('line-count').textContent=active.length;$('syllable-count').textContent=countSyllables(text);
@@ -34,9 +34,8 @@ $('copy').onclick=()=>copyText(draft.value);
 $('download').onclick=()=>{if(!draft.value.trim()){notify('Önce birkaç kelime yaz.');return;}const blob=new Blob([title.value?`${title.value}\n\n${draft.value}`:draft.value],{type:'text/plain;charset=utf-8'}),url=URL.createObjectURL(blob),a=node('a');a.href=url;a.download=(title.value||'Sözora-taslak').replace(/[<>:"/\\|?*\x00-\x1f]/g,'-').slice(0,80)+'.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
 function replaceDraft(fn){if(draft.value.trim()||title.value.trim()){pendingReplace=fn;$('replace-dialog').showModal();}else fn();}
 $('cancel-replace').onclick=()=>{$('replace-dialog').close();pendingReplace=null;};$('confirm-replace').onclick=()=>{$('replace-dialog').close();pendingReplace?.();pendingReplace=null;};
-$('new-draft').onclick=()=>replaceDraft(()=>{draft.value='';title.value='';save();render();draft.focus();});
-$('sample').onclick=()=>replaceDraft(()=>{title.value='Bir akşam kıyısında';draft.value='İçimde durulur koca bir deniz\nUfukta usulca kaybolur güneş\nBir sözün yeter, her şey tertemiz\nGecenin kalbinde yanar bir ateş';save();render();});
-const engine=new RhythmEngine(beat=>{[...document.querySelectorAll('.beat-dots i')].forEach((el,i)=>el.classList.toggle('active',i===beat));},playing=>{$('play').textContent=playing?'■ Durdur':'▶ Başlat';$('audio-state').textContent=playing?'Çalıyor':'Duruşta';$('play').setAttribute('aria-pressed',String(playing));});
+$('new-draft').onclick=()=>replaceDraft(()=>{draft.value='';title.value='';save();render();$('drawer-file').close();draft.focus();});
+const engine=new RhythmEngine(beat=>{[...document.querySelectorAll('.beat-dots i')].forEach((el,i)=>el.classList.toggle('active',i===beat));},playing=>{$('play').textContent=playing?'■ Durdur':'▶ Başlat';$('audio-state').textContent=playing?'Çalıyor':'Duruşta';$('play').setAttribute('aria-pressed',String(playing));$('nav-rhythm').classList.toggle('playing',playing);$('nav-rhythm').setAttribute('aria-label',playing?'Metronom, çalıyor':'Metronom');});
 function configure(){engine.configure({bpm:$('bpm').value,mode:$('rhythm-mode').value,meter:$('meter').value,volume:$('volume').value/100});}
 function tempo(value){const n=Math.round(Math.min(240,Math.max(30,Number(value)||90)));$('bpm').value=n;$('tempo-range').value=n;configure();}
 $('bpm').onchange=()=>tempo($('bpm').value);$('tempo-range').oninput=()=>tempo($('tempo-range').value);$('tempo-up').onclick=()=>tempo(Number($('bpm').value)+1);$('tempo-down').onclick=()=>tempo(Number($('bpm').value)-1);$('volume').oninput=configure;$('rhythm-mode').onchange=configure;
@@ -49,3 +48,11 @@ $('read').onclick=()=>{if(reading){stopReading();return;}if(!draft.value.trim())
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;});window.addEventListener('appinstalled',()=>{installPrompt=null;$('install').textContent='Ana ekrana eklendi';});
 $('install').onclick=async()=>{if(installPrompt){const p=installPrompt;installPrompt=null;await p.prompt();return;}const ios=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);$('install-instructions').textContent=matchMedia('(display-mode: standalone)').matches?'Sözora zaten uygulama olarak açık.':ios?'Safari’de Paylaş düğmesine dokun, ardından “Ana Ekrana Ekle”yi seç.':'Chrome veya Edge menüsünde “Uygulamayı yükle” ya da “Ana ekrana ekle”yi seç. Yükleme seçeneği yoksa sayfayı yer imlerine ekleyebilirsin.';$('install-dialog').showModal();};$('close-install').onclick=()=>$('install-dialog').close();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>notify('Çevrimdışı hazırlığı tamamlanamadı. İnternet bağlantını kontrol et.'));
+
+for(const opener of document.querySelectorAll('[data-open]')){
+ const panel=$(opener.dataset.open);
+ opener.onclick=()=>{panel.showModal();opener.setAttribute('aria-expanded','true');};
+ panel.querySelector('[data-close]').onclick=()=>panel.close();
+ panel.addEventListener('click',e=>{if(e.target===panel){const r=panel.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)panel.close();}});
+ panel.addEventListener('close',()=>opener.setAttribute('aria-expanded','false'));
+}

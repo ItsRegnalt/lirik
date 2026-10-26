@@ -1,7 +1,8 @@
 # Sözora
 
-Türkçe söz yazma atölyesi. Flowpad projesinin yenilenen arayüzü; PatiGram renk paleti ve güneş/ay anahtarı referans alınmıştır.
+Mobil söz defteri. Flowpad projesinin yenilenen arayüzü; PatiGram renk paleti ve güneş/ay anahtarı referans alınmıştır.
 
+- Ekranı kaplayan çizgili defter; Dosya/Kafiye soldan, Analiz/Metronom sağdan açılır
 - Otomatik yerel taslak kaydı, metin indirme ve kopyalama
 - Yerel kelime seçkisinden uyak önerileri
 - Kafiye şeması, redif adayları, hece ayırma ve cihaz destekliyorsa Türkçe sesli okuma
