@@ -33,3 +33,13 @@
 - Kanıt: 43/43 Node testi; verify-ui.cjs ve verify-improvements.cjs Chrome senaryoları geçti. 320×568 ekranda araç açıkken söz alanı 167 px, büyütülünce 236 px.
 - Fiziksel telefon klavyesi, iOS kurulumu ve hoparlör ses kalitesi denenmedi. RTK global hook değiştirilmedi.
 - Geri dönüş: 430877a; düzenleme öncesi yerel yedek backup/2026-10-26-review-fixes/.
+
+## Yeni sesler ve ikinci inceleme — 26 Ekim 2026
+- Çevrimdışı hazırlık ve uygulamanın tamamına ait boyut bilgisi, sayfa altında gizlilik metninin altına taşındı. Defter, kafiye ve metronomu kapsadığı belirtildi; alt metinler aynı puntoda.
+- Filtre varyasyonları yerine üç farklı CC0 kayıt: Ahşap, Rimshot, Dijital. Kaynaklar THIRD_PARTY.md içinde. Yerel sesler toplam yaklaşık 27 KB; her satırın hoparlörü seçim değiştirmeden dinletir.
+- Ses seçici klavye/Escape ve dışarı tıklamayla kapanır. Hızlı önizleme geçişi, Başlat ve sayfadan ayrılmada önceki önizleme durdurulur.
+- Yaklaşık 500 KB indirme / 830 KB çevrimdışı dosya; tarayıcı ekleri ve kullanıcı sözleri hariç. Önbellek lirik-v13.
+- Kanıt: 43/43 Node testi; verify-ui.cjs ve verify-improvements.cjs Chrome kontrolleri geçti. Üç farklı ses sinyali, çevrimdışı önizleme, seçimi değiştirmeme, hızlı geçiş ve önizleme→Başlat kontrol edildi. 320×568 kurulum rehberi açıkken sayfa taşması düzeltildi.
+- Fiziksel hoparlör, Bluetooth, gerçek mobil klavye, iOS kurulumu ve ekran okuyucu denenmedi. Sesin beğenilmesi ölçülmüş sayılmaz.
+- Geri dönüş: a701286; kaynak yedeği backup/2026-10-26-sound-picker/, eski ses dosyaları Git geçmişinde. RTK global hook değiştirilmedi.
+- Aynı beş inceleme rolü beşer tur tamamladı (25 senaryo incelemesi): reports/2026-10-26-ikinci-inceleme.md. Söz yazma rolünde yeni tarayıcı çalışmadı; kaynak incelemesi ve Node kanıtı açıkça ayrıldı. Yeni öneriler: noktalı kısaltmalar, yaygınlık sıralaması, gerçek klavye alanı ve dize sonu odak akışı.

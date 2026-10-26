@@ -29,7 +29,7 @@ export class RhythmEngine {
   draw(){if(!this.running)return;while(this.queue[0]?.time<=this.ctx.currentTime){this.onBeat(this.queue.shift().beat);}this.frame=requestAnimationFrame(()=>this.draw());}
   async loadSounds(){
     if(this.buffers)return;
-    if(!this.loading)this.loading=Promise.all(['accent','click'].map(async kind=>{
+    if(!this.loading)this.loading=Promise.all(['classic','low','high'].map(async kind=>{
       const response=await fetch(new URL(`./sounds/${kind}.wav`,import.meta.url));
       if(!response.ok)throw Error('Vuruş sesleri yüklenemedi. Bağlantını kontrol edip tekrar dene.');
       return [kind,await this.ctx.decodeAudioData(await response.arrayBuffer())];
@@ -37,10 +37,8 @@ export class RhythmEngine {
     await this.loading;
   }
   sound(kind,time){
-    const source=this.ctx.createBufferSource();source.buffer=this.buffers[kind];
-    // Shape the sampled transient rather than shifting the same click's pitch.
-    const filter=this.ctx.createBiquadFilter();filter.type=this.tone==='low'?'lowpass':this.tone==='high'?'highpass':'allpass';filter.frequency.value=this.tone==='low'?1300:this.tone==='high'?2200:1000;filter.Q.value=.7;
-    const gain=this.ctx.createGain();gain.gain.value=.65;
-    source.connect(filter);filter.connect(gain);gain.connect(this.bus);source.onended=()=>{source.disconnect();filter.disconnect();gain.disconnect();};source.start(time);
+    const source=this.ctx.createBufferSource();source.buffer=this.buffers[this.tone];
+    const gain=this.ctx.createGain();gain.gain.value=kind==='accent'?.85:.6;
+    source.connect(gain);gain.connect(this.bus);source.onended=()=>{source.disconnect();gain.disconnect();};source.start(time);
   }
 }

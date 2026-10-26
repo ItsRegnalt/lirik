@@ -104,12 +104,18 @@ function tempo(value){const n=Math.round(Math.min(240,Math.max(30,Number(value)|
 $('bpm').onchange=()=>tempo($('bpm').value);$('tempo-range').oninput=()=>tempo($('tempo-range').value);$('tempo-up').onclick=()=>tempo(Number($('bpm').value)+1);$('tempo-down').onclick=()=>tempo(Number($('bpm').value)-1);$('volume').oninput=configure;
 try{const tone=localStorage.getItem('lirik-metronome-sound');if(['classic','low','high'].includes(tone))$('metronome-sound').value=tone;}catch{}
 try{const settings=JSON.parse(localStorage.getItem('lirik-metronome-settings')||'null');if(settings){if(['classic','low','high'].includes(settings.tone))$('metronome-sound').value=settings.tone;if(Number.isFinite(settings.volume))$('volume').value=Math.round(Math.max(0,Math.min(1,settings.volume))*100);tempo(settings.bpm);}}catch{}
-$('metronome-sound').onchange=()=>{configure();try{localStorage.setItem('lirik-metronome-sound',$('metronome-sound').value);}catch{}};
-$('play').onclick=async()=>{if(engine.running){engine.stop();return;}$('play').disabled=true;try{configure();await engine.start();}catch(e){notify(e.message);engine.stop();}finally{$('play').disabled=false;}};
-const previewEngine=new RhythmEngine();let previewTimer;
-$('preview-sound').onclick=async()=>{const button=$('preview-sound');button.disabled=true;try{if(engine.running)engine.stop();previewEngine.stop();previewEngine.configure({bpm:240,volume:$('volume').value/100,tone:$('metronome-sound').value});await previewEngine.start();previewTimer=setTimeout(()=>{previewEngine.stop();button.disabled=false;},450);}catch(e){previewEngine.stop();button.disabled=false;notify(e.message);}};
+const soundNames={classic:'Ahşap',low:'Rimshot',high:'Dijital'};
+function updateSoundPicker(){const selected=$('metronome-sound').value;$('sound-name').textContent=soundNames[selected];document.querySelectorAll('[data-sound]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.sound===selected)));}
+updateSoundPicker();
+for(const button of document.querySelectorAll('[data-sound]'))button.onclick=()=>{$('metronome-sound').value=button.dataset.sound;configure();updateSoundPicker();$('sound-picker').open=false;$('sound-picker').querySelector('summary').focus();try{localStorage.setItem('lirik-metronome-sound',button.dataset.sound);}catch{}};
+const previewEngine=new RhythmEngine();let previewTimer,previewAttempt=0;
+function stopPreview(){previewAttempt++;clearTimeout(previewTimer);previewEngine.stop();document.querySelectorAll('[data-preview]').forEach(button=>button.setAttribute('aria-pressed','false'));}
+for(const button of document.querySelectorAll('[data-preview]'))button.onclick=async()=>{stopPreview();const attempt=previewAttempt;try{if(engine.running)engine.stop();button.setAttribute('aria-pressed','true');previewEngine.configure({bpm:240,volume:$('volume').value/100,tone:button.dataset.preview});await previewEngine.start();if(attempt===previewAttempt)previewTimer=setTimeout(stopPreview,450);}catch(e){if(attempt===previewAttempt){stopPreview();notify(e.message);}}};
+$('play').onclick=async()=>{stopPreview();if(engine.running){engine.stop();return;}$('play').disabled=true;try{configure();await engine.start();}catch(e){notify(e.message);engine.stop();}finally{$('play').disabled=false;}};
+$('sound-picker').addEventListener('keydown',e=>{if(e.key==='Escape'&&$('sound-picker').open){e.preventDefault();e.stopPropagation();$('sound-picker').open=false;$('sound-picker').querySelector('summary').focus();}});
+document.addEventListener('click',e=>{if(!e.target.closest('#sound-picker'))$('sound-picker').open=false;});
 let taps=[];$('tap').onclick=()=>{const now=performance.now();if(now-(taps.at(-1)||0)>2500)taps=[];taps.push(now);taps=taps.slice(-6);if(taps.length>1){const avg=(taps.at(-1)-taps[0])/(taps.length-1);tempo(60000/avg);}else notify('Aynı ritimde birkaç kez dokun.');};
-document.addEventListener('visibilitychange',()=>{if(document.hidden){clearTimeout(previewTimer);previewEngine.stop();$('preview-sound').disabled=false;}if(document.hidden&&engine.running){engine.stop();notify('Ritim arka planda duraklatıldı.');}});window.addEventListener('pagehide',()=>{engine.stop();previewEngine.stop();save();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){stopPreview();}if(document.hidden&&engine.running){engine.stop();notify('Ritim arka planda duraklatıldı.');}});window.addEventListener('pagehide',()=>{engine.stop();stopPreview();save();});
 // PatiGram's expandable installation guide; all text remains available offline.
 const installGuides = [
  ['iPhone · Safari', 'Lirik’i Safari’de aç. Paylaş’a (veya Sayfa Menüsü → Paylaş) dokun → Ana Ekrana Ekle. Görünüyorsa “Web Uygulaması Olarak Aç” seçeneğini açık tut ve Ekle’ye dokun.'],
@@ -125,7 +131,7 @@ window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installProm
 window.addEventListener('appinstalled',()=>{installPrompt=null;nativeInstall.hidden=true;notify('Lirik ana ekrana eklendi.');});
 nativeInstall.onclick=async()=>{if(!installPrompt)return;const prompt=installPrompt;installPrompt=null;nativeInstall.hidden=true;try{await prompt.prompt();await prompt.userChoice;}catch{notify('Kurulumu aşağıdaki tarayıcı adımlarıyla tamamlayabilirsin.');}};
 $('install-help').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();$('install-help').open=false;$('install').focus();}});
-if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').then(()=>navigator.serviceWorker.ready).then(()=>{$('offline-state').textContent='Çevrimdışı kullanıma hazır. Defter, kafiye ve metronom internet olmadan çalışır.';}).catch(()=>{$('offline-state').textContent='Çevrimdışı hazırlığı tamamlanamadı. İnternete bağlanıp sayfayı yeniden aç.';});}else $('offline-state').textContent='Bu tarayıcı çevrimdışı kaydı desteklemiyor.';
+if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').then(()=>navigator.serviceWorker.ready).then(()=>{$('offline-state').textContent='Çevrimdışı kullanıma hazır.';}).catch(()=>{$('offline-state').textContent='Çevrimdışı hazırlığı tamamlanamadı. İnternete bağlanıp sayfayı yeniden aç.';});}else $('offline-state').textContent='Bu tarayıcı çevrimdışı kaydı desteklemiyor.';
 
 const openers=[...document.querySelectorAll('[data-open]')];
 let activeTool=null, toolOpeningTimer;
