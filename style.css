@@ -43,10 +43,17 @@ svg{display:block;flex-shrink:0}.search-wrap button,.drawer-close,.tempo button{
 
 .brand img{display:block;width:32px;height:32px;flex:none}
 
-/* Writing tools stay close to the selected line without widening the bottom navigation. */
-.writing-toolbar{display:flex;gap:6px;align-items:center;padding:0 0 8px;flex-shrink:0}.writing-toolbar button{min-height:36px;padding:6px 10px;font-size:12px;white-space:nowrap}.writing-toolbar [aria-expanded=true]{background:var(--purple-bg);color:var(--purple)}.writing-toolbar #writing-undo{margin-left:auto}.writing-toolbar button:disabled{opacity:.45}
-.section-add{display:flex;gap:6px;flex-wrap:wrap;margin:16px 0}.section-add button{font-size:13px;padding-inline:12px}.section-item{border-top:1px solid var(--line);padding:8px 0}.section-item>button{border:0;font-weight:600;font-size:14px;padding-left:0}.section-actions{display:flex;gap:6px;flex-wrap:wrap}.section-actions button{font-size:12px;padding:6px 10px;min-height:44px}.section-actions button:disabled{opacity:.4}
-@media(max-width:360px){.writing-toolbar{gap:4px}.writing-toolbar button{padding-inline:6px;font-size:11px}}
-
 #drawer-sections>h2{min-height:44px;display:flex;align-items:center;padding-right:52px;margin:0 0 8px}
 @media(pointer:coarse){.writing-toolbar button{min-height:44px}}
+
+/* The notebook owns the viewport; only the four main tools stay anchored. */
+:root{--nav-height:64px}
+.shell{height:auto;min-height:100dvh;padding-bottom:calc(var(--nav-height) + env(safe-area-inset-bottom))}
+.workspace{flex:none;height:calc(var(--editor-viewport,100dvh) - 130px - env(safe-area-inset-bottom));min-height:220px}
+.notebook{padding-top:16px}
+.toolbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:1200px;z-index:10;background:var(--paper);height:calc(var(--nav-height) + env(safe-area-inset-bottom));padding-bottom:calc(6px + env(safe-area-inset-bottom));overflow:hidden}
+.page-footer{padding-top:20px;padding-bottom:24px}
+.shell:has(.has-tools) .footer-meta{display:grid}
+.file-tools #save-state{align-self:flex-start;max-width:none;min-height:32px;margin-top:8px;white-space:nowrap}
+#nav-sections{border-top-color:var(--line)}
+@media(max-width:700px){.workspace.has-tools{grid-template-rows:minmax(0,60fr) minmax(0,40fr)}.notebook{padding-top:12px}.tool-panel{padding-top:14px}.topbar{padding-block:8px}.keyboard-open .workspace{height:calc(var(--editor-viewport,100dvh) - var(--nav-height) - env(safe-area-inset-bottom));min-height:140px}.keyboard-open .page-footer{display:none}}

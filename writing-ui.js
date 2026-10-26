@@ -3,13 +3,10 @@ export function initWriting({draft,save,notify}){
  const $=id=>document.getElementById(id);
  const make=(tag,text,cls)=>{const el=document.createElement(tag);if(text!==undefined)el.textContent=text;if(cls)el.className=cls;return el;};
  const button=(text,action,label)=>{const el=make('button',text);el.type='button';el.onclick=action;if(label)el.setAttribute('aria-label',label);return el;};
- let undo;
  function changed(text,position){
-  undo={before:draft.value,after:text,start:draft.selectionStart,end:draft.selectionEnd};
   draft.value=text;draft.setSelectionRange(position,position);draft.dispatchEvent(new Event('input',{bubbles:true}));save();refresh();
  }
  function refresh(){
-  $('writing-undo').disabled=!undo||undo.after!==draft.value;
   const parts=sections(draft.value),out=$('section-list');out.replaceChildren();
   if(!parts.length)out.append(make('p','Henüz bölüm yok. İmleci deftere yerleştirip bir bölüm ekle.','fine'));
   parts.forEach((part,i)=>{
@@ -30,8 +27,7 @@ export function initWriting({draft,save,notify}){
   if(isHeading(line.text))changed(draft.value.slice(0,line.start)+marker+draft.value.slice(line.end),line.start);
   else changed(draft.value.slice(0,line.start)+marker+'\n'+draft.value.slice(line.start),line.start+marker.length+1);
  };
- $('writing-undo').onclick=()=>{if(!undo||draft.value!==undo.after)return;const previous=undo;undo=null;draft.value=previous.before;draft.setSelectionRange(previous.start,previous.end);draft.dispatchEvent(new Event('input',{bubbles:true}));save();refresh();notify('Son bölüm işlemi geri alındı.');};
  draft.addEventListener('input',refresh);draft.addEventListener('click',refresh);draft.addEventListener('keyup',refresh);draft.addEventListener('select',refresh);
  $('nav-sections').addEventListener('click',refresh);
- refresh();return {refresh,reset(){undo=null;refresh();}};
+ refresh();return {refresh,reset(){refresh();}};
 }

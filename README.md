@@ -5,7 +5,7 @@ Türkçe şarkı sözleri için sade bir söz defteri.
 **[Lirik’i aç](https://itsregnalt.github.io/lirik/)**
 
 - Sözlerin cihazına otomatik kaydedilir; metin olarak indirilebilir.
-- Kıta, nakarat ve köprü başlıkları ekle; bölümleri taşı veya çoğalt. Başlıklar hece ve uyak hesabına katılmaz. Son bölüm işlemi, ardından yazıda değişiklik yapmadıysan geri alınabilir.
+- Kıta, nakarat ve köprü başlıkları ekle; bölümleri taşı veya çoğalt. Başlıklar hece ve uyak hesabına katılmaz.
 - Dize sonundaki kelimeden kafiye ara; yazarken öneriler güncellenir.
 - Hece sayılarını ve olası uyak düzenini sözlerinle birlikte incele. Sayı ve kısaltma içeren eksik sayımlar `+` ile işaretlenir.
 - Klasik mekanik metronom, ahşap blok veya kapalı hi-hat metronom sesini dinleyerek seç; tempo ve ses tercihlerin saklanır.

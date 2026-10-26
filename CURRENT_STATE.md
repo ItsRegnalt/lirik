@@ -81,3 +81,9 @@
 - Önceden kaydedilmiş alternatifler veri kaybını önlemek için depolamada ve TXT indirmede korunur. Yeni alternatif oluşturma arayüzü yok. Önbellek ve kaynak sürümleri lirik-v18 olarak eşitlendi.
 - Kanıt: 52/52 Node testi; Chrome üzerinde kaldırılan kontroller, bölüm ekleme/geri alma, sayaçlar, eski alternatiflerin indirilmesi, 320×568 / 375×288 / 1280×900 yerleşim ve çevrimdışı yeniden açılış geçti. Tarayıcı hatası görülmedi. Gerçek telefon ve iOS denenmedi.
 - Geri dönüş: c513ddc. Yedek: backup/2026-10-26-remove-writing-controls/. RTK global ayarları değiştirilmedi.
+
+## Mobil defter alanı — 26 Ekim 2026
+- Görünen şarkı başlığı ve Geri al kaldırıldı. Kayıt durumu ile Bölümler Dosya menüsüne taşındı; eski başlık verileri indirme için korundu.
+- Yalnızca dört ana araç düğmesi ekran altında sabit. Kurulum ve çevrimdışı bilgiler sayfanın devamında kaydırılır; defter ekranın büyük bölümünü kaplar. Bölümler kapanınca odak erişilebilir Dosya düğmesine döner.
+- Kanıt: 52/52 Node testi; Chrome 320×568, 390×720 ve 1280×900 boyutlarında yazı alanı, araçlar, sabit çubuk, yatay taşma, bölüm ekleme ve çevrimdışı yeniden açılış geçti. Gerçek telefon ve iOS klavyesi denenmedi. Önbellek lirik-v19.
+- Geri dönüş: 99eb9da. Yedek: backup/2026-10-26-mobile-notebook/. RTK global ayarları değiştirilmedi.
