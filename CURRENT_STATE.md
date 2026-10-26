@@ -10,3 +10,4 @@
 - Geri dönüş: Git sürümünden geri alınabilir; orijinal uygulama için yerel yedek kullanılabilir.
 - Depo: https://github.com/ItsRegnalt/sozora
 - Yayın adresi: https://itsregnalt.github.io/sozora/ (main dalı, kök dizin).
+- Canlı yayın HTTP 200 doğrulandı. Aynı Chrome senaryoları GitHub Pages üzerinde de geçti; alt dizin yolları, ses sentezi ve çevrimdışı yenileme çalışıyor.
