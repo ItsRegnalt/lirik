@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {normalize,words,syllabify,countSyllables,analyze,findRhymes} from '../turkish.js';
+import {normalize,words,syllabify,countSyllables,analyze,findRhymes,soundKey} from '../turkish.js';
 
 test('Turkish locale casing and NFC',()=>{assert.equal(normalize('I İ Â'),'ı i â');assert.equal(normalize('I\u0307'),'i');});
 test('punctuation and apostrophe tokenization',()=>{assert.deepEqual(words("İstanbul’a, güzel!"),["İstanbul’a",'güzel']);});
@@ -35,4 +35,15 @@ test('uncertainty anywhere in line is reported',()=>assert.match(analyze('2025 g
 test('rhyme type applies symmetrically to both rows',()=>assert.ok(analyze('deniz\ntemiz').every(r=>r.type==='tam')));
 test('crossed groups recognize shared suffix redif',()=>{
  const r=analyze('gözlerim\nyol\nsözlerim\nkol');assert.deepEqual(r.map(x=>x.letter),['A','B','A','B']);assert.equal(r[0].redif,'lerim');assert.equal(r[2].redif,'lerim');
+});
+
+test('soft g uses standard lengthening instead of a literal consonant',()=>{
+ assert.equal(soundKey('dağ'),'dā');assert.equal(soundKey('yağ'),'yā');
+ assert.equal(soundKey('ağaç'),'āç');assert.equal(soundKey('ağrı'),'ārı');
+ assert.notEqual(soundKey('dağ'),soundKey('dal'));assert.notEqual(soundKey('yağ'),soundKey('yag'));
+ assert.ok(findRhymes('dağ').some(x=>x.word==='yağ'&&x.type==='asonans'));
+});
+test('sound keys stay stable and Turkish vowel distinctions survive',()=>{
+ for(const w of ['dağ','ağaç','değil','soğuk','güneş'])assert.equal(soundKey(soundKey(w)),soundKey(w));
+ for(const [a,b] of [['ışık','işik'],['gül','gul'],['şiş','sis']])assert.notEqual(soundKey(a),soundKey(b));
 });

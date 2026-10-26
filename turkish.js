@@ -1,4 +1,4 @@
-const VOWELS = new Set([...'aeıioöuü']);
+const VOWELS = new Set([...'aeıioöuüāēɯīōȫūǖ']);
 const fold = s => s.normalize('NFC').replace(/[âîû]/g, c => ({'â':'a','î':'i','û':'u'}[c]));
 
 export function normalize(text = '') { return String(text).normalize('NFC').toLocaleLowerCase('tr-TR').normalize('NFC'); }
@@ -22,7 +22,7 @@ export function countSyllables(text='') { return words(text).reduce((n,w)=>n+( /
 
 // Curated, ordinary Turkish vocabulary, kept local for offline use. This is a suggestion
 // corpus, not a comprehensive dictionary or semantic/morphological analyzer.
-const corpus=`ağaç aydınlık akşam akıl alan alaz aile arkadaş arı araç armağan aslan aşk aşık atak avuç ay ayaz ayağım ayak ayla ayrılık bağ bahar bakış bal balık barış baş bayrak beden bekle ben beyaz bilgi bilek bilge bir bitki biz boğaz boya böcek bölük bulut burç buruk büyük cadde can canlı cevap cesur ceylan çiçek çocuk çorap dağ dal damla dans dayan deniz derman derin ders dilek dilim din doğa doğum dost düş düşler dünya düğüm el elma emek engel esen eser eş etek ev evren ezgi fidan fırtına fikir filiz ateş gelin gemi genç gerçek güzel göz gölge gömlek gönül gökyüzü gün güneş gül çöl güç gürültü haber hayat hak hakikat halk halı hamal han hane hayal hayran hece hediye heyecan hırka hikaye his hitap umut ırmak ışık iz iç içim insan İstanbul izlek kadın kader kalem kalp kanat kapı kara kardeş karga karın karlı kartal kasaba kavak kaya keder kelime keman kendi keskin kitap kıraç kıyı kış koku kol konak konu korku koşu köprü köy köz kuğu kulak kum kurak kuş kuytu labirent lale lamba leke leylak liman lisan lokma lodos mahir masal mavilik mektup melodi merak merdiven meşe mesele mesut mevsim meydan mısra misafir mizah mutlu nar nefes nehir neden nesil gece niyet nokta nur ocak oda okul olgun omuz onur orman ortak oyun ödev örnek özgür ömür ölüm özlem pahalı pamuk parça park pas parıltı pencere perde pervane piyasa rahat renk resim rüya sabah sabır sade saf sahil saklı sanat sarı saygı sefer seher sakin sel sema sen serin sevgi sevinç sığınak sınır sırt sıcak şiir şifa şirin şişe şive şöhret şule taç tane taş tavır temiz tepe terazi tını toprak töre türkü umut uyak uzak ümit üzüm vadi vakit varlık vatan vefa verim yağmur yakamoz yalın yalnız yamaç yan yana yaren yasemin yaşam yaz yazı yel yeni yer yeryüzü yığın yıldız yılkı yiğit yokuş yol yoldaş yorgun yürek yüz zaman zevk zeytin zihin zümrüt söz`.split(/\s+/);
+const corpus=`ağaç aydınlık akşam akıl alan alaz aile arkadaş arı araç armağan aslan aşk aşık atak avuç ay ayaz ayağım ayak ayla ayrılık bağ çağ sağ yağ bahar bakış bal balık barış baş bayrak beden bekle ben beyaz bilgi bilek bilge bir bitki biz boğaz boya böcek bölük bulut burç buruk büyük cadde can canlı cevap cesur ceylan çiçek çocuk çorap dağ dal damla dans dayan deniz derman derin ders dilek dilim din doğa doğum dost düş düşler dünya düğüm el elma emek engel esen eser eş etek ev evren ezgi fidan fırtına fikir filiz ateş gelin gemi genç gerçek güzel göz gölge gömlek gönül gökyüzü gün güneş gül çöl güç gürültü haber hayat hak hakikat halk halı hamal han hane hayal hayran hece hediye heyecan hırka hikaye his hitap umut ırmak ışık iz iç içim insan İstanbul izlek kadın kader kalem kalp kanat kapı kara kardeş karga karın karlı kartal kasaba kavak kaya keder kelime keman kendi keskin kitap kıraç kıyı kış koku kol konak konu korku koşu köprü köy köz kuğu kulak kum kurak kuş kuytu labirent lale lamba leke leylak liman lisan lokma lodos mahir masal mavilik mektup melodi merak merdiven meşe mesele mesut mevsim meydan mısra misafir mizah mutlu nar nefes nehir neden nesil gece niyet nokta nur ocak oda okul olgun omuz onur orman ortak oyun ödev örnek özgür ömür ölüm özlem pahalı pamuk parça park pas parıltı pencere perde pervane piyasa rahat renk resim rüya sabah sabır sade saf sahil saklı sanat sarı saygı sefer seher sakin sel sema sen serin sevgi sevinç sığınak sınır sırt sıcak şiir şifa şirin şişe şive şöhret şule taç tane taş tavır temiz tepe terazi tını toprak töre türkü umut uyak uzak ümit üzüm vadi vakit varlık vatan vefa verim yağmur yakamoz yalın yalnız yamaç yan yana yaren yasemin yaşam yaz yazı yel yeni yer yeryüzü yığın yıldız yılkı yiğit yokuş yol yoldaş yorgun yürek yüz zaman zevk zeytin zihin zümrüt söz`.split(/\s+/);
 const morph = new Map([
  ['ler',['ler']],['lar',['lar']],['lerim',['ler','im']],['larım',['lar','ım']],['lerimiz',['ler','imiz']],['larımız',['lar','ımız']],
  ['leriniz',['ler','iniz']],['larınız',['lar','ınız']],['leri',['ler','i']],['ları',['lar','ı']],
@@ -39,7 +39,14 @@ function rhymeType(a,b) {
   if([...common].every(c=>VOWELS.has(c))) return 'asonans';
   return common.length===1?'yarım':common.length===2?'tam':'zengin';
 }
-function endSound(w) { return tail(w); }
+// Standard Turkish: final/pre-consonantal ğ and identical-vowel contraction.
+// Shortcut: regional speech and other ğ contexts need a pronunciation lexicon.
+export function soundKey(w) {
+  const long={'a':'ā','e':'ē','ı':'ɯ','i':'ī','o':'ō','ö':'ȫ','u':'ū','ü':'ǖ'};
+  return tail(w).replace(/([aeıioöuü])ğ([aeıioöuü])/g,(all,a,b)=>a===b?long[a]:all)
+    .replace(/([aeıioöuü])ğ(?=$|[^aeıioöuüāēɯīōȫūǖ])/g,(_,v)=>long[v]);
+}
+function endSound(w) { return soundKey(w); }
 
 export function findRhymes(query,{kind='all',limit=40}={}) {
   const q=tail(query); if(!q) return [];
@@ -93,7 +100,7 @@ function stanza(rowGroup){
     if(best<0){const g={ending:end,rows:[r],letter:label(groups.length)}; r.letter=g.letter;r.type='';groups.push(g);}
     else {r.letter=groups[best].letter;r.type=rhymeType(end,groups[best].ending);groups[best].rows.push(r);}
   }
-  for(const g of groups) for(const r of g.rows){r.letter=g.letter;r.type=g.rows.length>1?rhymeType(g.rows.map(x=>endSound(x.rhyme)).reduce(sharedEnding),g.rows.map(x=>endSound(x.rhyme)).reduce(sharedEnding)):'';}
+  for(const g of groups) for(const r of g.rows){r.letter=g.letter;r.type=g.rows.length>1?rhymeType(g.rows.map(x=>x.rhyme).reduce(sharedEnding),g.rows.map(x=>x.rhyme).reduce(sharedEnding)):'';}
 }
 
 export function analyze(text='',options={}) {

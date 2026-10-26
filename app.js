@@ -24,8 +24,45 @@ function render(){
   });
 }
 draft.addEventListener('input',()=>{clearTimeout(saveTimer);saveState('Kaydediliyor…','saving');saveTimer=setTimeout(save,250);render();});title.addEventListener('input',save);render();
-function setTheme(theme){document.documentElement.dataset.theme=theme;$('theme-toggle').setAttribute('aria-checked',String(theme==='dark'));const label=theme==='dark'?'Açık moda geç':'Koyu moda geç';$('theme-toggle').setAttribute('aria-label',label);$('theme-toggle').title=label;document.querySelector('meta[name=theme-color]').content=theme==='dark'?'#121212':'#f2f3f7';}
-setTheme(document.documentElement.dataset.theme==='dark'?'dark':'light');$('theme-toggle').onclick=()=>{const theme=document.documentElement.dataset.theme==='dark'?'light':'dark';const apply=()=>setTheme(theme);try{localStorage.setItem('sozora-theme',theme);}catch{}if(!document.startViewTransition||matchMedia('(prefers-reduced-motion: reduce)').matches){apply();return;}const r=$('theme-toggle').getBoundingClientRect(),x=r.x+r.width/2,y=r.y+r.height/2,radius=Math.hypot(Math.max(x,innerWidth-x),Math.max(y,innerHeight-y));const transition=document.startViewTransition(apply);transition.ready.then(()=>document.documentElement.animate({clipPath:[`circle(0px at ${x}px ${y}px)`,`circle(${radius}px at ${x}px ${y}px)`]},{duration:420,easing:'cubic-bezier(.22,1,.36,1)',pseudoElement:'::view-transition-new(root)'})).catch(()=>{});};
+let themeChoice=document.documentElement.dataset.theme==='dark'?'dark':'light';
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+function haptic(pattern = 8) {
+  if (reducedMotion.matches) return;
+  try { navigator.vibrate?.(pattern); } catch {}
+}
+function setTheme(theme, updateBrowserColor = true) {
+  document.documentElement.dataset.theme = theme;
+  const toggle = document.getElementById('theme-toggle');
+  const label = theme === 'dark' ? 'Açık moda geç' : 'Koyu moda geç';
+  toggle.setAttribute('aria-label', label); toggle.title = label;
+  toggle.setAttribute('aria-checked', String(theme === 'dark'));
+  if (updateBrowserColor) document.querySelector('meta[name="theme-color"]').content = theme === 'dark' ? '#121212' : '#f2f3f7';
+}
+setTheme(themeChoice || 'light');
+document.getElementById('theme-toggle').addEventListener('click', async event => {
+  const button = event.currentTarget;
+  haptic();
+  themeChoice = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  const apply = () => { setTheme(themeChoice, false); try { localStorage.setItem('sozora-theme', themeChoice); } catch {} };
+  if (reducedMotion.matches || !document.startViewTransition) { apply(); setTheme(themeChoice); return; }
+  button.disabled = true;
+  // Capture complete theme colors, rather than intermediate control transitions.
+  document.documentElement.classList.add('theme-transition');
+  getComputedStyle(document.documentElement).color;
+  try {
+    const transition = document.startViewTransition(apply);
+    await transition.ready;
+    document.documentElement.animate({ opacity: [0, 1] }, {
+      duration: 280, easing: 'ease-in-out', pseudoElement: '::view-transition-new(root)'
+    });
+    await transition.finished;
+  } catch { apply(); }
+  finally {
+    setTheme(themeChoice);
+    document.documentElement.classList.remove('theme-transition');
+    button.disabled = false;
+  }
+});
 function setTab(name){for(const n of ['scheme','syllables']){const selected=n===name;$('tab-'+n).setAttribute('aria-selected',selected);$('tab-'+n).tabIndex=selected?0:-1;$('panel-'+n).hidden=!selected;}}
 for(const n of ['scheme','syllables']){$('tab-'+n).onclick=()=>setTab(n);$('tab-'+n).onkeydown=e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();const next=e.key==='Home'?'scheme':e.key==='End'?'syllables':n==='scheme'?'syllables':'scheme';setTab(next);$('tab-'+next).focus();}};}
 function search(){const q=$('rhyme-query').value.trim(),out=$('rhyme-results');out.replaceChildren();if(!q){out.append(node('span','empty-text','Kafiye bulmak için bir kelime yaz.'));return;}const results=findRhymes(q,{kind:$('rhyme-kind').value,limit:40});if(!results.length){out.append(node('span','empty-text','Bu seçkide eşleşme yok. Başka bir kelime veya uyak türü dene.'));return;}for(const r of results){const chip=node('button','chip',r.word);chip.type='button';chip.title=`${r.type} · ${r.syllables} hece · kopyala`;chip.onclick=()=>copyText(r.word);out.append(chip);}}
@@ -36,26 +73,24 @@ $('download').onclick=()=>{if(!draft.value.trim()){notify('Önce birkaç kelime 
 function replaceDraft(fn){if(draft.value.trim()||title.value.trim()){pendingReplace=fn;$('replace-dialog').showModal();}else fn();}
 $('cancel-replace').onclick=()=>{$('replace-dialog').close();pendingReplace=null;};$('confirm-replace').onclick=()=>{$('replace-dialog').close();pendingReplace?.();pendingReplace=null;};
 $('new-draft').onclick=()=>replaceDraft(()=>{draft.value='';title.value='';save();render();closeTools();draft.focus();});
-const engine=new RhythmEngine(beat=>{[...document.querySelectorAll('.beat-dots i')].forEach((el,i)=>el.classList.toggle('active',i===beat));},playing=>{$('play').textContent=playing?'■ Durdur':'▶ Başlat';$('audio-state').textContent=playing?'Çalıyor':'Duruşta';$('play').setAttribute('aria-pressed',String(playing));$('nav-rhythm').classList.toggle('playing',playing);$('nav-rhythm').setAttribute('aria-label',playing?'Metronom, çalıyor':'Metronom');});
-function configure(){engine.configure({bpm:$('bpm').value,mode:$('rhythm-mode').value,meter:$('meter').value,volume:$('volume').value/100});}
+const engine=new RhythmEngine(beat=>{[...document.querySelectorAll('.beat-dots i')].forEach((el,i)=>el.classList.toggle('active',i===beat));},playing=>{$('play').textContent=playing?'Durdur':'Başlat';$('audio-state').textContent=playing?'Çalıyor':'Duruşta';$('play').setAttribute('aria-pressed',String(playing));$('nav-rhythm').classList.toggle('playing',playing);$('nav-rhythm').setAttribute('aria-label',playing?'Metronom, çalıyor':'Metronom');});
+function configure(){engine.configure({bpm:$('bpm').value,volume:$('volume').value/100});}
 function tempo(value){const n=Math.round(Math.min(240,Math.max(30,Number(value)||90)));$('bpm').value=n;$('tempo-range').value=n;configure();}
-$('bpm').onchange=()=>tempo($('bpm').value);$('tempo-range').oninput=()=>tempo($('tempo-range').value);$('tempo-up').onclick=()=>tempo(Number($('bpm').value)+1);$('tempo-down').onclick=()=>tempo(Number($('bpm').value)-1);$('volume').oninput=configure;$('rhythm-mode').onchange=configure;
-$('meter').onchange=()=>{const dots=document.querySelector('.beat-dots');dots.replaceChildren(...Array.from({length:Number($('meter').value)},()=>node('i')));configure();};
-$('play').onclick=async()=>{if(engine.running){engine.stop();return;}$('play').disabled=true;try{stopReading();configure();await engine.start();}catch(e){notify(e.message);engine.stop();}finally{$('play').disabled=false;}};
+$('bpm').onchange=()=>tempo($('bpm').value);$('tempo-range').oninput=()=>tempo($('tempo-range').value);$('tempo-up').onclick=()=>tempo(Number($('bpm').value)+1);$('tempo-down').onclick=()=>tempo(Number($('bpm').value)-1);$('volume').oninput=configure;
+$('play').onclick=async()=>{if(engine.running){engine.stop();return;}$('play').disabled=true;try{configure();await engine.start();}catch(e){notify(e.message);engine.stop();}finally{$('play').disabled=false;}};
 let taps=[];$('tap').onclick=()=>{const now=performance.now();if(now-(taps.at(-1)||0)>2500)taps=[];taps.push(now);taps=taps.slice(-6);if(taps.length>1){const avg=(taps.at(-1)-taps[0])/(taps.length-1);tempo(60000/avg);}else notify('Aynı ritimde birkaç kez dokun.');};
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&engine.running){engine.stop();notify('Ritim arka planda duraklatıldı.');}if(document.hidden)stopReading();});window.addEventListener('pagehide',()=>{engine.stop();save();stopReading();});
-let reading=false;function stopReading(){if('speechSynthesis' in window)speechSynthesis.cancel();reading=false;$('read').textContent='Sesli oku';}
-$('read').onclick=()=>{if(reading){stopReading();return;}if(!draft.value.trim()){notify('Önce birkaç kelime yaz.');return;}if(!('speechSynthesis' in window)){notify('Bu tarayıcı sesli okumayı desteklemiyor.');return;}const voice=speechSynthesis.getVoices().find(v=>v.lang.toLowerCase().startsWith('tr'));if(!voice){notify('Cihazında Türkçe okuma sesi bulunamadı. Dil ayarlarından Türkçe ses ekleyebilirsin.');return;}engine.stop();const utterance=new SpeechSynthesisUtterance(draft.value);utterance.lang='tr-TR';utterance.voice=voice;utterance.rate=.8;utterance.onend=utterance.onerror=()=>{reading=false;$('read').textContent='Sesli oku';};reading=true;$('read').textContent='Okumayı durdur';speechSynthesis.speak(utterance);};
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&engine.running){engine.stop();notify('Ritim arka planda duraklatıldı.');}});window.addEventListener('pagehide',()=>{engine.stop();save();});
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;});window.addEventListener('appinstalled',()=>{installPrompt=null;$('install').textContent='Ana ekrana eklendi';});
 $('install').onclick=async()=>{if(installPrompt){const p=installPrompt;installPrompt=null;await p.prompt();return;}const ios=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);$('install-instructions').textContent=matchMedia('(display-mode: standalone)').matches?'Lirik zaten uygulama olarak açık.':ios?'Safari’de Paylaş düğmesine dokun, ardından “Ana Ekrana Ekle”yi seç.':'Chrome veya Edge menüsünde “Uygulamayı yükle” ya da “Ana ekrana ekle”yi seç. Yükleme seçeneği yoksa sayfayı yer imlerine ekleyebilirsin.';$('install-dialog').showModal();};$('close-install').onclick=()=>$('install-dialog').close();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>notify('Çevrimdışı hazırlığı tamamlanamadı. İnternet bağlantını kontrol et.'));
 
 const openers=[...document.querySelectorAll('[data-open]')];
 let activeTool=null;
-function closeTools(restoreFocus=false){if(!activeTool)return;const opener=activeTool;$(opener.dataset.open).hidden=true;opener.setAttribute('aria-expanded','false');$('tool-dock').hidden=true;activeTool=null;if(restoreFocus)opener.focus();}
+$('tool-dock').hidden=false;$('tool-dock').inert=true;
+function closeTools(restoreFocus=false){if(!activeTool)return;const opener=activeTool;$(opener.dataset.open).hidden=true;opener.setAttribute('aria-expanded','false');document.querySelector('.workspace').classList.remove('has-tools');$('tool-dock').inert=true;activeTool=null;if(restoreFocus)opener.focus();}
 for(const opener of openers){
  const panel=$(opener.dataset.open);$('tool-dock').append(panel);
- opener.onclick=()=>{const same=activeTool===opener;closeTools();if(same)return;activeTool=opener;panel.hidden=false;$('tool-dock').hidden=false;opener.setAttribute('aria-expanded','true');};
+ opener.onclick=()=>{const same=activeTool===opener;closeTools();if(same)return;activeTool=opener;panel.hidden=false;document.querySelector('.workspace').classList.add('has-tools');$('tool-dock').inert=false;opener.setAttribute('aria-expanded','true');};
  panel.querySelector('[data-close]').onclick=()=>closeTools(true);
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.querySelector('dialog[open]'))closeTools(true);});
