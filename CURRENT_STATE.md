@@ -13,3 +13,6 @@
 - RTK uyarısı: global hook kurulu değil; global ayarlar değiştirilmedi.
 
 - Canlı Lirik adresinde aynı Chrome senaryosu ve çevrimdışı ses/kelime araması geçti. GitHub Tests ve Pages başarılı. Kelime listesi sabit kaynak sürümünden tekrar üretildi; SHA256 aynı.
+
+- Sayfa altına ve README’ye yaklaşık 485 KB indirme / 800 KB çevrimdışı dosya bilgisi eklendi. Canlı gzip yanıtları ölçüldü; tarayıcı ekleri, taslaklar ve RAM bu ölçüme dahil değil. Önbellek sürümü lirik-v11.
+- Boyut bilgilendirmesi sonrası responsive yerleşim ve PWA çevrimdışı tarayıcı kontrolü geçti; diff kontrolü temiz.

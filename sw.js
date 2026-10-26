@@ -1,4 +1,4 @@
-const CACHE='lirik-v10';
+const CACHE='lirik-v11';
 const ASSETS=['./','./index.html','./style.css?v=10','./app.js?v=10','./turkish.js','./lexicon.js','./sounds/accent.wav','./sounds/click.wav','./audio.js','./editor.js','./inter-variable.woff2','./manifest.webmanifest','./icon.svg?v=10','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS.map(url=>new Request(url,{cache:'reload'})))).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>(k.startsWith('sozora-')||k.startsWith('lirik-'))&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
