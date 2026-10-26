@@ -13,3 +13,8 @@ test('scheduler uses audio time and recovers without late bursts',()=>{
   assert.ok(notes.length);assert.ok(notes.every(x=>x.time>=2.02&&x.time<2.12));
   assert.equal(notes[0].kind,'accent');e.configure({bpm:999});assert.equal(e.bpm,240);
 });
+
+test('sound profiles accept only supported voices',()=>{
+ const e=new RhythmEngine();for(const tone of ['studio','wood','digital']){e.configure({tone});assert.equal(e.tone,tone);}
+ e.configure({tone:'unknown'});assert.equal(e.tone,'studio');
+});

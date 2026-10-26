@@ -3,7 +3,7 @@ export function pattern(step) {
   return step%4===0?[step%16===0?'accent':'click']:[];
 }
 export class RhythmEngine {
-  constructor(onBeat=()=>{},onState=()=>{}){this.onBeat=onBeat;this.onState=onState;this.bpm=90;this.volume=.55;this.running=false;this.pending=false;this.queue=[];}
+  constructor(onBeat=()=>{},onState=()=>{}){this.onBeat=onBeat;this.onState=onState;this.bpm=90;this.tone='studio';this.volume=.55;this.running=false;this.pending=false;this.queue=[];}
   async start(){
     if(this.running||this.pending)return;
     this.pending=true;
@@ -22,13 +22,15 @@ export class RhythmEngine {
     }finally{this.pending=false;}
   }
   stop(){this.pending=false;this.running=false;clearInterval(this.timer);cancelAnimationFrame(this.frame);this.queue=[];this.bus?.disconnect();this.compressor?.disconnect();if(this.ctx?.state==='running')this.ctx.suspend().catch(()=>{});this.onState(false);this.onBeat(-1);}
-  configure({bpm=this.bpm,volume=this.volume}={}){this.bpm=Math.min(240,Math.max(30,Number(bpm)||90));this.volume=Math.max(0,Math.min(1,Number(volume)||0));if(this.bus)this.bus.gain.setTargetAtTime(this.volume*.6,this.ctx.currentTime,.015);}
+  configure({bpm=this.bpm,volume=this.volume,tone=this.tone}={}){this.tone=['studio','wood','digital'].includes(tone)?tone:'studio';this.bpm=Math.min(240,Math.max(30,Number(bpm)||90));this.volume=Math.max(0,Math.min(1,Number(volume)||0));if(this.bus)this.bus.gain.setTargetAtTime(this.volume*.6,this.ctx.currentTime,.015);}
   schedule(){if(!this.running)return;const now=this.ctx.currentTime;if(this.next<now){this.next=now+.02;}while(this.next<now+.12){const step=this.step%16;for(const hit of pattern(step))this.sound(hit,this.next);if(step%4===0)this.queue.push({time:this.next,beat:step/4});this.next+=60/this.bpm/4;this.step=(step+1)%16;}}
   draw(){if(!this.running)return;while(this.queue[0]?.time<=this.ctx.currentTime){this.onBeat(this.queue.shift().beat);}this.frame=requestAnimationFrame(()=>this.draw());}
   sound(kind,time){
-    // Two damped resonances form a woodblock pulse; no samples or network required.
-    const accent=kind==='accent', base=accent?1200:850;
-    for(const [ratio,level,duration] of [[1,.5,.065],[2.76,.18,.028]]){
+    // Damped resonances shape three short pulses; no samples or network required.
+    const accent=kind==='accent';
+    const voices={studio:{base:accent?1600:1100,partials:[[1,.48,.025],[1.5,.12,.012]]},wood:{base:accent?1200:850,partials:[[1,.5,.065],[2.76,.18,.028]]},digital:{base:accent?1900:1400,partials:[[1,.42,.04],[2,.08,.018]]}};
+    const {base,partials}=voices[this.tone];
+    for(const [ratio,level,duration] of partials){
       const source=this.ctx.createOscillator(),gain=this.ctx.createGain();
       source.type='sine';source.frequency.setValueAtTime(base*ratio,time);
       source.frequency.exponentialRampToValueAtTime(base*ratio*.94,time+duration);

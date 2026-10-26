@@ -1,5 +1,6 @@
 import {words,syllabify,countSyllables,analyze,findRhymes} from './turkish.js';
 import {RhythmEngine} from './audio.js';
+import {lineEndings} from './editor.js';
 const $=id=>document.getElementById(id), draft=$('draft'), title=$('draft-title');
 let toastTimer,saveTimer,pendingReplace,installPrompt;
 function notify(message){$('toast').textContent=message;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),3500);}
@@ -8,7 +9,30 @@ function saveState(text,state){$('save-state').textContent=text;$('save-state').
 function save(){try{localStorage.setItem('sozora-draft',JSON.stringify({title:title.value,text:draft.value}));saveState('Cihaza kaydedildi','saved');}catch{saveState('Kaydedilemedi · Metni indir','error');}}
 try{const saved=JSON.parse(localStorage.getItem('sozora-draft')||'null');if(saved){draft.value=String(saved.text||'');title.value=String(saved.title||'');saveState('Cihaza kaydedildi','saved');}}catch{}
 function empty(container){const div=node('div','empty-analysis');div.append(node('p','','Henüz metin yok.'));container.append(div);}
+function syncEndings(){
+  const mirror=$('ending-mirror');
+  mirror.style.width=draft.clientWidth+'px';
+  mirror.style.transform=`translate(${-draft.scrollLeft}px,${-draft.scrollTop}px)`;
+  const viewport=draft.getBoundingClientRect();
+  for(const button of mirror.querySelectorAll('button')){const r=button.getBoundingClientRect();button.tabIndex=r.top>=viewport.top&&r.bottom<=viewport.bottom?0:-1;}
+}
+function mirrorText(text){const span=node('span','',text);span.setAttribute('aria-hidden','true');return span;}
+function renderEndings(){
+  const mirror=$('ending-mirror');mirror.replaceChildren();let offset=0;
+  for(const ending of lineEndings(draft.value)){
+    mirror.append(mirrorText(draft.value.slice(offset,ending.start)));
+    const button=node('button','ending-word',ending.word);button.type='button';
+    button.setAttribute('aria-label',`${ending.word} için kafiye bul`);
+    button.onclick=()=>{$('rhyme-query').value=ending.word;$('rhyme-kind').value='all';openTool($('nav-rhyme'));search();};
+    mirror.append(button);offset=ending.end;
+  }
+  mirror.append(mirrorText(draft.value.slice(offset)+'\u200b'));syncEndings();
+}
+draft.addEventListener('scroll',syncEndings);
+new ResizeObserver(syncEndings).observe(draft);
+document.fonts.ready.then(syncEndings);
 function render(){
+  renderEndings();
   const text=draft.value,rows=analyze(text),active=rows.filter(x=>x.line.trim());
   $('word-count').textContent=words(text).length;$('line-count').textContent=active.length;$('syllable-count').textContent=countSyllables(text);
   $('scheme').textContent=active.length?rows.map(x=>x.line.trim()?x.letter:' / ').join(' ').trim():'—';
@@ -66,7 +90,7 @@ document.getElementById('theme-toggle').addEventListener('click', async event =>
 function setTab(name){for(const n of ['scheme','syllables']){const selected=n===name;$('tab-'+n).setAttribute('aria-selected',selected);$('tab-'+n).tabIndex=selected?0:-1;$('panel-'+n).hidden=!selected;}}
 for(const n of ['scheme','syllables']){$('tab-'+n).onclick=()=>setTab(n);$('tab-'+n).onkeydown=e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();const next=e.key==='Home'?'scheme':e.key==='End'?'syllables':n==='scheme'?'syllables':'scheme';setTab(next);$('tab-'+next).focus();}};}
 function search(){const q=$('rhyme-query').value.trim(),out=$('rhyme-results');out.replaceChildren();if(!q){out.append(node('span','empty-text','Kafiye bulmak için bir kelime yaz.'));return;}const results=findRhymes(q,{kind:$('rhyme-kind').value,limit:40});if(!results.length){out.append(node('span','empty-text','Bu seçkide eşleşme yok. Başka bir kelime veya kafiye türü dene.'));return;}for(const r of results){const chip=node('button','chip',r.word);chip.type='button';chip.title=`${r.type} · ${r.syllables} hece · kopyala`;chip.onclick=()=>copyText(r.word);out.append(chip);}}
-$('rhyme-form').onsubmit=e=>{e.preventDefault();search();};$('rhyme-kind').onchange=search;document.querySelectorAll('[data-query]').forEach(b=>b.onclick=()=>{$('rhyme-query').value=b.dataset.query;search();});
+$('rhyme-form').onsubmit=e=>{e.preventDefault();search();};$('rhyme-query').addEventListener('input',e=>{if(!e.isComposing)search();});$('rhyme-query').addEventListener('compositionend',search);$('rhyme-kind').onchange=search;document.querySelectorAll('[data-query]').forEach(b=>b.onclick=()=>{$('rhyme-query').value=b.dataset.query;search();});
 async function copyText(text){if(!text.trim()){notify('Önce birkaç kelime yaz.');return;}try{await navigator.clipboard.writeText(text);notify('Kopyalandı.');}catch{notify('Kopyalanamadı. Metni seçip cihazının Kopyala komutunu kullan.');}}
 $('copy').onclick=()=>copyText(draft.value);
 function downloadDraft(){if(!draft.value.trim()&&!title.value.trim()){notify('Önce birkaç kelime yaz.');return;}const blob=new Blob([title.value?`${title.value}\n\n${draft.value}`:draft.value],{type:'text/plain;charset=utf-8'}),url=URL.createObjectURL(blob),a=node('a');a.href=url;a.download=(title.value||'Lirik-taslak').replace(/[<>:"/\\|?*\x00-\x1f]/g,'-').slice(0,80)+'.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
@@ -75,9 +99,11 @@ function replaceDraft(fn){if(draft.value.trim()||title.value.trim()){pendingRepl
 $('cancel-replace').onclick=()=>{$('replace-dialog').close();pendingReplace=null;};$('confirm-replace').onclick=()=>{$('replace-dialog').close();pendingReplace?.();pendingReplace=null;};
 $('new-draft').onclick=()=>replaceDraft(()=>{draft.value='';title.value='';save();render();closeTools();draft.focus();});
 const engine=new RhythmEngine(beat=>{[...document.querySelectorAll('.beat-dots i')].forEach((el,i)=>el.classList.toggle('active',i===beat));},playing=>{$('play').textContent=playing?'Durdur':'Başlat';$('audio-state').textContent=playing?'Çalıyor':'Duruşta';$('play').setAttribute('aria-pressed',String(playing));$('nav-rhythm').classList.toggle('playing',playing);$('nav-rhythm').setAttribute('aria-label',playing?'Metronom, çalıyor':'Metronom');});
-function configure(){engine.configure({bpm:$('bpm').value,volume:$('volume').value/100});}
+function configure(){engine.configure({bpm:$('bpm').value,volume:$('volume').value/100,tone:$('metronome-sound').value});}
 function tempo(value){const n=Math.round(Math.min(240,Math.max(30,Number(value)||90)));$('bpm').value=n;$('tempo-range').value=n;configure();}
 $('bpm').onchange=()=>tempo($('bpm').value);$('tempo-range').oninput=()=>tempo($('tempo-range').value);$('tempo-up').onclick=()=>tempo(Number($('bpm').value)+1);$('tempo-down').onclick=()=>tempo(Number($('bpm').value)-1);$('volume').oninput=configure;
+try{const tone=localStorage.getItem('lirik-metronome-sound');if(['studio','wood','digital'].includes(tone))$('metronome-sound').value=tone;}catch{}
+$('metronome-sound').onchange=()=>{configure();try{localStorage.setItem('lirik-metronome-sound',$('metronome-sound').value);}catch{}};
 $('play').onclick=async()=>{if(engine.running){engine.stop();return;}$('play').disabled=true;try{configure();await engine.start();}catch(e){notify(e.message);engine.stop();}finally{$('play').disabled=false;}};
 let taps=[];$('tap').onclick=()=>{const now=performance.now();if(now-(taps.at(-1)||0)>2500)taps=[];taps.push(now);taps=taps.slice(-6);if(taps.length>1){const avg=(taps.at(-1)-taps[0])/(taps.length-1);tempo(60000/avg);}else notify('Aynı ritimde birkaç kez dokun.');};
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&engine.running){engine.stop();notify('Ritim arka planda duraklatıldı.');}});window.addEventListener('pagehide',()=>{engine.stop();save();});
@@ -104,9 +130,10 @@ function finishToolOpening(){clearTimeout(toolOpeningTimer);$('tool-dock').class
 document.querySelector('.workspace').addEventListener('transitionend',e=>{if(e.target===e.currentTarget)finishToolOpening();});
 $('tool-dock').hidden=false;$('tool-dock').inert=true;
 function closeTools(restoreFocus=false){finishToolOpening();if(!activeTool)return;const opener=activeTool;$(opener.dataset.open).hidden=true;opener.setAttribute('aria-expanded','false');document.querySelector('.workspace').classList.remove('has-tools');$('tool-dock').inert=true;activeTool=null;if(restoreFocus)opener.focus();}
+function openTool(opener){if(activeTool===opener)return;closeTools();activeTool=opener;$(opener.dataset.open).hidden=false;document.querySelector('.workspace').classList.add('has-tools');$('tool-dock').inert=false;opener.setAttribute('aria-expanded','true');if(!reducedMotion.matches){$('tool-dock').classList.add('is-opening');toolOpeningTimer=setTimeout(finishToolOpening,300);}}
 for(const opener of openers){
  const panel=$(opener.dataset.open);$('tool-dock').append(panel);
- opener.onclick=()=>{const same=activeTool===opener;closeTools();if(same)return;activeTool=opener;panel.hidden=false;document.querySelector('.workspace').classList.add('has-tools');$('tool-dock').inert=false;opener.setAttribute('aria-expanded','true');if(!reducedMotion.matches){$('tool-dock').classList.add('is-opening');toolOpeningTimer=setTimeout(finishToolOpening,300);}};
+ opener.onclick=()=>{if(activeTool===opener)closeTools();else openTool(opener);};
  panel.querySelector('[data-close]').onclick=()=>closeTools(true);
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.querySelector('dialog[open]'))closeTools(true);});
