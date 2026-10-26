@@ -38,8 +38,9 @@ export class RhythmEngine {
   }
   sound(kind,time){
     const source=this.ctx.createBufferSource();source.buffer=this.buffers[kind];
-    source.playbackRate.value={classic:1,low:.8,high:1.2}[this.tone];
+    // Shape the sampled transient rather than shifting the same click's pitch.
+    const filter=this.ctx.createBiquadFilter();filter.type=this.tone==='low'?'lowpass':this.tone==='high'?'highpass':'allpass';filter.frequency.value=this.tone==='low'?1300:this.tone==='high'?2200:1000;filter.Q.value=.7;
     const gain=this.ctx.createGain();gain.gain.value=.65;
-    source.connect(gain);gain.connect(this.bus);source.onended=()=>{source.disconnect();gain.disconnect();};source.start(time);
+    source.connect(filter);filter.connect(gain);gain.connect(this.bus);source.onended=()=>{source.disconnect();filter.disconnect();gain.disconnect();};source.start(time);
   }
 }

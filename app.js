@@ -34,17 +34,17 @@ document.fonts.ready.then(syncEndings);
 function render(){
   renderEndings();
   const text=draft.value,rows=analyze(text),active=rows.filter(x=>x.line.trim());
-  $('word-count').textContent=words(text).length;$('line-count').textContent=active.length;$('syllable-count').textContent=countSyllables(text);
+  $('word-count').textContent=words(text).length;$('line-count').textContent=active.length;$('syllable-count').textContent=countSyllables(text)+(active.some(row=>row.uncertain)?'+':'');$('syllable-count').title=active.some(row=>row.uncertain)?'Sayı ve kısaltmalar sayılmadı; toplam eksik olabilir.':'';
   $('scheme').textContent=active.length?rows.map(x=>x.line.trim()?x.letter:' / ').join(' ').trim():'—';
   const scheme=$('analysis-rows'), syllables=$('syllable-rows');scheme.replaceChildren();syllables.replaceChildren();
   if(!active.length){empty(scheme);empty(syllables);return;}
   rows.forEach((row,i)=>{
     if(!row.line.trim()){scheme.append(node('div','stanza-break'));syllables.append(node('div','stanza-break'));return;}
     const el=node('div','analysis-row'),line=node('div','row-text',row.line);
-    const detail=[row.type?`${row.type} uyak`:'',row.redif?`Redif adayı: −${row.redif}`:'',`${row.syllables} hece`].filter(Boolean).join(' · ');
+    const detail=[row.type?`${row.type} uyak`:'',row.redif?`Redif adayı: −${row.redif}`:'',`${row.syllables}${row.uncertain?'+':''} hece`].filter(Boolean).join(' · ');
     line.append(node('small','',detail));if(row.note)line.append(node('small','',row.note));
     el.append(node('span','row-number',i+1),line,node('span','row-label',row.letter));scheme.append(el);
-    const reader=node('div','analysis-row');reader.append(node('span','row-number',i+1),node('div','row-text',words(row.line).map(w=>/\d/u.test(w)?w:syllabify(w).join('·')||w).join('  /  ')),node('span','row-syllables',row.syllables));syllables.append(reader);
+    const reader=node('div','analysis-row');reader.append(node('span','row-number',i+1),node('div','row-text',words(row.line).map(w=>/\d/u.test(w)?w:syllabify(w).join('·')||w).join('  /  ')),node('span','row-syllables',row.syllables+(row.uncertain?'+':'')));syllables.append(reader);
   });
 }
 draft.addEventListener('input',()=>{clearTimeout(saveTimer);saveState('Kaydediliyor…','saving');saveTimer=setTimeout(save,250);render();});title.addEventListener('input',save);render();
@@ -99,14 +99,17 @@ function replaceDraft(fn){if(draft.value.trim()||title.value.trim()){pendingRepl
 $('cancel-replace').onclick=()=>{$('replace-dialog').close();pendingReplace=null;};$('confirm-replace').onclick=()=>{$('replace-dialog').close();pendingReplace?.();pendingReplace=null;};
 $('new-draft').onclick=()=>replaceDraft(()=>{draft.value='';title.value='';save();render();closeTools();draft.focus();});
 const engine=new RhythmEngine(beat=>{[...document.querySelectorAll('.beat-dots i')].forEach((el,i)=>el.classList.toggle('active',i===beat));},playing=>{$('play').textContent=playing?'Durdur':'Başlat';$('audio-state').textContent=playing?'Çalıyor':'Duruşta';$('play').setAttribute('aria-pressed',String(playing));$('nav-rhythm').classList.toggle('playing',playing);$('nav-rhythm').setAttribute('aria-label',playing?'Metronom, çalıyor':'Metronom');});
-function configure(){engine.configure({bpm:$('bpm').value,volume:$('volume').value/100,tone:$('metronome-sound').value});}
+function configure(){engine.configure({bpm:$('bpm').value,volume:$('volume').value/100,tone:$('metronome-sound').value});try{localStorage.setItem('lirik-metronome-settings',JSON.stringify({bpm:engine.bpm,volume:engine.volume,tone:engine.tone}));}catch{}}
 function tempo(value){const n=Math.round(Math.min(240,Math.max(30,Number(value)||90)));$('bpm').value=n;$('tempo-range').value=n;configure();}
 $('bpm').onchange=()=>tempo($('bpm').value);$('tempo-range').oninput=()=>tempo($('tempo-range').value);$('tempo-up').onclick=()=>tempo(Number($('bpm').value)+1);$('tempo-down').onclick=()=>tempo(Number($('bpm').value)-1);$('volume').oninput=configure;
 try{const tone=localStorage.getItem('lirik-metronome-sound');if(['classic','low','high'].includes(tone))$('metronome-sound').value=tone;}catch{}
+try{const settings=JSON.parse(localStorage.getItem('lirik-metronome-settings')||'null');if(settings){if(['classic','low','high'].includes(settings.tone))$('metronome-sound').value=settings.tone;if(Number.isFinite(settings.volume))$('volume').value=Math.round(Math.max(0,Math.min(1,settings.volume))*100);tempo(settings.bpm);}}catch{}
 $('metronome-sound').onchange=()=>{configure();try{localStorage.setItem('lirik-metronome-sound',$('metronome-sound').value);}catch{}};
 $('play').onclick=async()=>{if(engine.running){engine.stop();return;}$('play').disabled=true;try{configure();await engine.start();}catch(e){notify(e.message);engine.stop();}finally{$('play').disabled=false;}};
+const previewEngine=new RhythmEngine();let previewTimer;
+$('preview-sound').onclick=async()=>{const button=$('preview-sound');button.disabled=true;try{if(engine.running)engine.stop();previewEngine.stop();previewEngine.configure({bpm:240,volume:$('volume').value/100,tone:$('metronome-sound').value});await previewEngine.start();previewTimer=setTimeout(()=>{previewEngine.stop();button.disabled=false;},450);}catch(e){previewEngine.stop();button.disabled=false;notify(e.message);}};
 let taps=[];$('tap').onclick=()=>{const now=performance.now();if(now-(taps.at(-1)||0)>2500)taps=[];taps.push(now);taps=taps.slice(-6);if(taps.length>1){const avg=(taps.at(-1)-taps[0])/(taps.length-1);tempo(60000/avg);}else notify('Aynı ritimde birkaç kez dokun.');};
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&engine.running){engine.stop();notify('Ritim arka planda duraklatıldı.');}});window.addEventListener('pagehide',()=>{engine.stop();save();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){clearTimeout(previewTimer);previewEngine.stop();$('preview-sound').disabled=false;}if(document.hidden&&engine.running){engine.stop();notify('Ritim arka planda duraklatıldı.');}});window.addEventListener('pagehide',()=>{engine.stop();previewEngine.stop();save();});
 // PatiGram's expandable installation guide; all text remains available offline.
 const installGuides = [
  ['iPhone · Safari', 'Lirik’i Safari’de aç. Paylaş’a (veya Sayfa Menüsü → Paylaş) dokun → Ana Ekrana Ekle. Görünüyorsa “Web Uygulaması Olarak Aç” seçeneğini açık tut ve Ekle’ye dokun.'],
@@ -122,7 +125,7 @@ window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installProm
 window.addEventListener('appinstalled',()=>{installPrompt=null;nativeInstall.hidden=true;notify('Lirik ana ekrana eklendi.');});
 nativeInstall.onclick=async()=>{if(!installPrompt)return;const prompt=installPrompt;installPrompt=null;nativeInstall.hidden=true;try{await prompt.prompt();await prompt.userChoice;}catch{notify('Kurulumu aşağıdaki tarayıcı adımlarıyla tamamlayabilirsin.');}};
 $('install-help').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();$('install-help').open=false;$('install').focus();}});
-if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>notify('Çevrimdışı hazırlığı tamamlanamadı. İnternet bağlantını kontrol et.'));
+if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').then(()=>navigator.serviceWorker.ready).then(()=>{$('offline-state').textContent='Çevrimdışı kullanıma hazır. Defter, kafiye ve metronom internet olmadan çalışır.';}).catch(()=>{$('offline-state').textContent='Çevrimdışı hazırlığı tamamlanamadı. İnternete bağlanıp sayfayı yeniden aç.';});}else $('offline-state').textContent='Bu tarayıcı çevrimdışı kaydı desteklemiyor.';
 
 const openers=[...document.querySelectorAll('[data-open]')];
 let activeTool=null, toolOpeningTimer;
@@ -133,7 +136,9 @@ function closeTools(restoreFocus=false){finishToolOpening();if(!activeTool)retur
 function openTool(opener){if(activeTool===opener)return;closeTools();activeTool=opener;$(opener.dataset.open).hidden=false;document.querySelector('.workspace').classList.add('has-tools');$('tool-dock').inert=false;opener.setAttribute('aria-expanded','true');if(!reducedMotion.matches){$('tool-dock').classList.add('is-opening');toolOpeningTimer=setTimeout(finishToolOpening,300);}}
 for(const opener of openers){
  const panel=$(opener.dataset.open);$('tool-dock').append(panel);
- opener.onclick=()=>{if(activeTool===opener)closeTools();else openTool(opener);};
+ opener.onclick=event=>{if(activeTool===opener)closeTools();else{openTool(opener);if(event.detail===0)panel.querySelector('input,button:not([data-close]),[role=tab]')?.focus({preventScroll:true});}};
  panel.querySelector('[data-close]').onclick=()=>closeTools(true);
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.querySelector('dialog[open]'))closeTools(true);});
+
+$('panel-size').onclick=()=>{const compact=document.querySelector('.workspace').classList.toggle('compact-tools');$('panel-size').textContent=compact?'Araç alanını büyüt':'Söz alanını büyüt';$('panel-size').setAttribute('aria-expanded',String(!compact));};

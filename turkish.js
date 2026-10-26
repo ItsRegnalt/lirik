@@ -28,7 +28,7 @@ const morph = new Map([
  ['ler',['ler']],['lar',['lar']],['lerim',['ler','im']],['larım',['lar','ım']],['lerimiz',['ler','imiz']],['larımız',['lar','ımız']],
  ['leriniz',['ler','iniz']],['larınız',['lar','ınız']],['leri',['ler','i']],['ları',['lar','ı']],
  ['lerden',['ler','den']],['lardan',['lar','dan']],['lerde',['ler','de']],['larda',['lar','da']],
- ['lerce',['ler','ce']],['ca',['ca']],['ce',['ce']],['ım',['ım']],['im',['im']],['um',['um']],['üm',['üm']]
+ ['lerce',['ler','ce']],['ca',['ca']],['ce',['ce']],['de',['de']],['da',['da']],['den',['den']],['dan',['dan']],['ım',['ım']],['im',['im']],['um',['um']],['üm',['üm']]
 ]);
 const roots = new Set(corpus.map(normalize));
 const dictionary = new Set([...roots,...Object.keys(lexicon)]);
@@ -53,6 +53,8 @@ function endSound(w) { return soundKey(w); }
 const rhymeIndex=new Map();
 for(const word of dictionary){const sound=soundKey(word),key=sound.at(-1);if(!rhymeIndex.has(key))rhymeIndex.set(key,[]);rhymeIndex.get(key).push({word,sound,syllables:countSyllables(word)});}
 export function findRhymes(query,{kind='all',limit=40}={}) {
+  // Uppercase-only tokens are usually acronyms, not pronounceable words.
+  if (/^[A-ZÇĞİÖŞÜ]{2,}$/u.test(String(query).trim())) return [];
   const q=tail(query);if(!q)return [];
   const sound=endSound(q);
   return (rhymeIndex.get(sound.at(-1))||[]).filter(x=>tail(x.word)!==q).map(({word,sound:ending,syllables})=>{
@@ -67,9 +69,18 @@ function label(i){let x=i+1,s='';while(x){x--;s=String.fromCharCode(65+x%26)+s;x
 function terminal(line){return words(line).at(-1)||'';}
 function redifSplit(word){
   const w=tail(word); if(roots.has(w)) return {root:w,suffix:''};
-  for(const [suffix] of [...morph].sort((a,b)=>b[0].length-a[0].length)) if(w.endsWith(suffix)) {
-    const root=w.slice(0,-suffix.length); if(roots.has(root)) return {root,suffix};
-  }
+  // Permit a short chain of known suffixes while requiring a curated root.
+  const suffixes=[...morph.keys()].sort((a,b)=>b.length-a.length);
+  const split=(form,depth=0)=>{
+    if(roots.has(form)) return {root:form,suffix:''};
+    if(depth>=3) return null;
+    for(const suffix of suffixes) if(form.length>suffix.length&&form.endsWith(suffix)) {
+      const found=split(form.slice(0,-suffix.length),depth+1);
+      if(found) return {root:found.root,suffix:found.suffix+suffix};
+    }
+    return null;
+  };
+  const found=split(w); if(found?.suffix) return found;
   return {root:w,suffix:''};
 }
 function stanza(rowGroup){
@@ -112,9 +123,9 @@ export function analyze(text='',options={}) {
   const lines=String(text).normalize('NFC').split(/\r?\n/), result=[]; let group=[];
   const flush=()=>{if(group.length){stanza(group);result.push(...group);group=[];}};
   for(const line of lines){
-    if(!line.trim()){flush();result.push({line,word:'',syllables:0,letter:'-',rhyme:'',redif:'',type:'',note:''});continue;}
+    if(!line.trim()){flush();result.push({line,word:'',syllables:0,uncertain:false,letter:'-',rhyme:'',redif:'',type:'',note:''});continue;}
     const word=terminal(line), uncertain=words(line).some(w=>/\d/u.test(w)||/^[A-ZÇĞİÖŞÜ]{2,}$/.test(w));
-    group.push({line,word,syllables:countSyllables(line),letter:'',rhyme:word,redif:'',type:'',note:uncertain?'Sayı/kısaltmanın telaffuzu belirsiz; hece sayısı eksik olabilir.':''});
+    group.push({line,word,syllables:countSyllables(line),uncertain,letter:'',rhyme:word,redif:'',type:'',note:uncertain?'Sayı ve büyük harfli kısaltmaların telaffuzu belirsiz olduğu için hece toplamına katılmaz; bu dize ve kıtanın hece toplamı eksik olabilir.':''});
   }
   flush(); return result;
 }

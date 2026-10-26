@@ -6,11 +6,12 @@ Türkçe şarkı sözleri için sade bir söz defteri.
 
 - Sözlerin cihazına otomatik kaydedilir; metin olarak indirilebilir.
 - Dize sonundaki kelimeden kafiye ara; yazarken öneriler güncellenir.
-- Hece sayılarını ve olası uyak düzenini sözlerinle birlikte incele.
-- Örnek sesli metronomla tempo tut.
+- Hece sayılarını ve olası uyak düzenini sözlerinle birlikte incele. Sayı ve kısaltma içeren eksik sayımlar `+` ile işaretlenir.
+- Klasik, tok veya parlak metronom sesini dinleyerek seç; tempo ve ses tercihlerin saklanır.
+- Küçük ekranda söz alanını büyüt; araçları klavyeyle de kullan.
 - Açık/koyu tema ve ana ekrana ekleme desteği.
 
-İlk çevrimiçi açılış ve önbellek hazırlığı tamamlandıktan sonra araçlar çevrimdışı çalışır. Tarayıcı verilerini silmek taslağını da siler; önemli sözlerini indirerek sakla.
+İlk çevrimiçi açılış ve önbellek hazırlığı tamamlandıktan sonra araçlar çevrimdışı çalışır. Hazırlık durumu Kafiye bul panelinde gösterilir. Tarayıcı verilerini silmek taslağını da siler; önemli sözlerini indirerek sakla.
 
 Çevrimdışı kullanım dosyalarının sıkıştırılmış indirme boyutu yaklaşık **485 KB**, açılmış toplamı yaklaşık **800 KB**. Tarayıcının ek depolama alanı ve kaydettiğin sözler bu değerlere dahil değildir. Boyutlar sürüme göre değişebilir; RAM kullanımını göstermez.
 

@@ -7,7 +7,7 @@ test('punctuation and apostrophe tokenization',()=>{assert.deepEqual(words("İst
 test('syllable boundaries for common Turkish words',()=>{assert.deepEqual(syllabify('merhaba'),['mer','ha','ba']);assert.deepEqual(syllabify('Türkçe'),['türk','çe']);assert.deepEqual(syllabify('İstanbul'),['is','tan','bul']);});
 test('zero vowels means zero syllables; apostrophe is not a syllable',()=>{assert.deepEqual(syllabify('XYZ'),[]);assert.deepEqual(syllabify("Ankara'nın"),['an','ka','ra','nın']);});
 test('counts â î û as vowel nuclei',()=>{assert.equal(countSyllables('kârî bir'),3);});
-test('numbers and abbreviations report uncertainty',()=>{const r=analyze('2026\nTR');assert.match(r[0].note,/belirsiz/);assert.match(r[1].note,/belirsiz/);});
+test('numbers and abbreviations mark partial syllable totals',()=>{const r=analyze('2026\nTR\n');assert.ok(r[0].uncertain);assert.ok(r[1].uncertain);assert.equal(r[2].uncertain,false);assert.match(r[0].note,/kıtanın hece toplamı eksik/);});
 test('physical blank lines preserved and stanza split',()=>{assert.equal(analyze('gül\n\nçöl').length,3);});
 test('rhyme sound includes all final sounds',()=>{assert.ok(findRhymes('deniz').some(x=>x.word==='temiz'&&x.type==='tam'));assert.ok(findRhymes('güneş').some(x=>x.word==='ateş'&&x.type==='tam'));assert.ok(findRhymes('gül',{limit:30000}).some(x=>x.word==='çöl'&&x.type==='yarım'));});
 test('rhyme suggestions rank stronger shared endings first',()=>{const r=findRhymes('güneş');assert.equal(r[0].word,'ateş');});
@@ -19,12 +19,14 @@ test('abba scheme',()=>{const r=analyze('deniz\nyol\nkol\ntemiz');assert.deepEqu
 test('exact repeated multiword ending is symmetric stanza redif',()=>{const r=analyze('güzel bir göz\nözel bir göz');assert.ok(r.every(x=>x.redif==='bir göz'));});
 test('exact same terminal word checks preceding word',()=>{const r=analyze('deniz güzel\ntemiz güzel');assert.equal(r[0].redif,'güzel');assert.equal(r[1].redif,'güzel');assert.equal(r[0].letter,r[1].letter);});
 test('verified shared suffix becomes redif, root remains rhyme',()=>{const r=analyze('gözlerim\nsözlerim');assert.ok(r.every(x=>x.redif==='lerim'));assert.equal(r[0].letter,r[1].letter);});
+test('composed shared suffix chain becomes a conservative redif candidate',()=>{const r=analyze('Gözlerimde\nSözlerimde');assert.ok(r.every(x=>x.redif==='lerimde'));assert.deepEqual(r.map(x=>x.rhyme),['göz','söz']);assert.ok(r.every(x=>/redif adayı/.test(x.note)));});
 test('multiword common ending is recognized',()=>{const r=analyze('güzel sözler\nözel sözler');assert.ok(r.every(x=>x.redif==='sözler'));});
 test('rhyme groups do not merge transitively across weak links',()=>{const r=analyze('deniz\ntemiz\naziz');assert.equal(r[0].letter,r[1].letter);});
 test('labels expand beyond Z',()=>{const r=analyze([...'abcçdefgğhıijklmnoöprsştuüvyz'].join('\n'));assert.equal(r[26].letter,'AA');assert.equal(r[28].letter,'AC');});
 test('long multisyllabic word handled',()=>{assert.equal(syllabify('başarısızlık').length,5);});
 test('XSS-like markup remains plain input',()=>{assert.equal(words('<script>alert(1)</script>')[0],'script');assert.equal(analyze('<img src=x>').length,1);});
 test('findRhymes obeys limit and kind',()=>{assert.ok(findRhymes('deniz',{limit:2}).length<=2);assert.ok(findRhymes('deniz',{kind:'tam'}).every(x=>x.type==='tam'));});
+test('uppercase acronym queries do not produce misleading rhyme suggestions',()=>{for(const q of ['TR','TBMM','THY'])assert.deepEqual(findRhymes(q),[]);assert.ok(findRhymes('tr').length>0);});
 test('single row is not redif; repeated-only rows contain no fake rhyme',()=>{
   assert.equal(analyze('bir deniz')[0].redif,'');
   assert.ok(analyze('güzel\ngüzel').every(r=>r.rhyme===''&&r.letter==='—'));
