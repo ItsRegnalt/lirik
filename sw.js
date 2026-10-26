@@ -1,5 +1,5 @@
-const CACHE='sozora-v3';
-const ASSETS=['./','./index.html','./style.css?v=3','./app.js?v=3','./turkish.js','./audio.js','./nunito.ttf','./manifest.webmanifest','./icon.svg','./icon-192.png','./icon-512.png'];
+const CACHE='lirik-v4';
+const ASSETS=['./','./index.html','./style.css?v=4','./app.js?v=4','./turkish.js','./audio.js','./nunito.ttf','./manifest.webmanifest','./icon.svg','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS.map(url=>new Request(url,{cache:'reload'})))));});
-self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('sozora-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>(k.startsWith('sozora-')||k.startsWith('lirik-'))&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
 self.addEventListener('fetch',e=>{if(e.request.method!=='GET'||new URL(e.request.url).origin!==self.location.origin)return;const url=new URL(e.request.url);if(!ASSETS.some(a=>new URL(a,self.registration.scope).pathname===url.pathname))return;e.respondWith(fetch(e.request,{cache:'no-cache'}).then(response=>{if(response.ok){const copy=response.clone();e.waitUntil(caches.open(CACHE).then(c=>c.put(e.request,copy)));}return response;}).catch(()=>caches.match(e.request)));});

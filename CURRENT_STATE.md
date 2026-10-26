@@ -17,3 +17,5 @@
 - 751a88c yayımlandı; yeni panel düzeni canlı Pages sayfasında doğrulandı. Canlı Chrome senaryosu da başarılı.
 
 - Kullanıcının açık sekmesinde app.js:38 null onclick hatası doğrulandı: yeni HTML eski sample koduyla eşleşmiş. HTML CSS/JS v=3 ile sürümlendi; SW v3 kurulumda reload, ağ isteklerinde no-cache kullanır. Eski sürümsüz scripti tuzaklayan regresyon ve offline panel testleri eklendi.
+
+- Uygulama adı Lirik olarak seçildi. Görünen ad, PWA ve indirme adı güncellendi; mevcut taslakları korumak için sozora-draft/sozora-theme depolama anahtarları korundu. SW lirik-v4; sürümlü CSS/JS v4. Depo adı değişimi otomatik onay incelemesince açık yetki olmadığı gerekçesiyle reddedildi; mevcut adreste yayınlanır.

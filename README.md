@@ -1,4 +1,4 @@
-# Sözora
+# Lirik
 
 Mobil söz defteri. Flowpad projesinin yenilenen arayüzü; PatiGram renk paleti ve güneş/ay anahtarı referans alınmıştır.
 
