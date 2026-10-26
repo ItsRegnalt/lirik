@@ -50,3 +50,13 @@
 - Kanıt: 43/43 Node testi; verify-ui.cjs ve verify-improvements.cjs yerel Chrome kontrolleri geçti. Çevrimdışı önizleme ve üç ayrı ses sinyali doğrulandı. Fiziksel hoparlör/kulaklık, gerçek mobil klavye, iOS ve ekran okuyucu denenmedi; eşit tepe seviyesi eşit algılanan ses yüksekliği anlamına gelmez.
 - Aynı beş ajan üçer tur karşılıklı değerlendirdi (15 tur). Seçim listesi ve elenen öneriler: reports/2026-10-26-oncelik-tartismasi.md. Bu öneriler kullanıcı seçmeden uygulanmadı.
 - Geri dönüş: 261bb43. Yerel yedek: backup/2026-10-26-natural-sounds/. RTK global ayarı değiştirilmedi.
+
+
+## Onaylanan altı geliştirme ve şeffaf favicon — 26 Ekim 2026
+- Noktalı kısaltmalar tek token; okunuş belirsizliği ve eksik hece toplamı korunur. Elle seçilmiş gündelik sözcükler kafiye önerilerinde öne çıkarılır; istatistiksel yaygınlık veya nadirlik iddiası yok.
+- Dize sonu çipinden arama açılır; kapatınca yazı odağı, seçim yönü, imleç ve kaydırma geri gelir. Ses seçimi/önizlemesine canlı erişilebilir durum metni eklendi.
+- Kısa mobil görünümde üst/alt bilgi gizlenerek deftere alan ayrılır. Chrome 375×288 benzetiminde araç açıkken editör 109 px. Gerçek telefon klavyesi, iOS ve gerçek ekran okuyucu denenmedi; Chrome erişilebilirlik ağacı ve klavye denendi.
+- Satır bazlı sayaç önbelleği, değişen son kelimelerin kısmi güncellenmesi ve kapalı analiz panelinde gereksiz DOM üretimini durdurma. 5.000 satır ilk çizim yaklaşık 487→118 ms; araç kapalı yazma ölçümü beş tekrar medyanı 51 ms. Donanıma göre değişir; açık analiz paneli için aynı süre vaat edilmez.
+- L + nota motifiyle şeffaf SVG favicon; 192/512 PNG yedeklerinin RGBA/alpha kanalı doğrulandı. Önbellek lirik-v15. Dosyalar yaklaşık 509 KB gzip / 841 KB ham; sayfadaki yaklaşık 510/845 KB bilgisi geçerli.
+- Kanıt: 46/46 Node testi; verify-ui.cjs, verify-improvements.cjs ve verify-approved.cjs Chrome kontrolleri geçti. Son değişiklikler sonrası testler yeniden çalıştırılır.
+- Geri dönüş: 159994e. Yedek: backup/2026-10-26-approved-improvements/. RTK hook kurulmadı; global ayarlar değiştirilmedi.

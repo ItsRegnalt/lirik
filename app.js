@@ -1,40 +1,49 @@
-import {words,syllabify,countSyllables,analyze,findRhymes} from './turkish.js';
+import {words,syllabify,analyze,findRhymes} from './turkish.js';
 import {RhythmEngine} from './audio.js';
 import {lineEndings} from './editor.js';
 const $=id=>document.getElementById(id), draft=$('draft'), title=$('draft-title');
-let toastTimer,saveTimer,pendingReplace,installPrompt;
+let toastTimer,saveTimer,pendingReplace,installPrompt,returnToDraft;
 function notify(message){$('toast').textContent=message;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),3500);}
 function node(tag,cls,text){const el=document.createElement(tag);if(cls)el.className=cls;if(text!==undefined)el.textContent=text;return el;}
 function saveState(text,state){$('save-state').textContent=text;$('save-state').dataset.state=state;}
 function save(){try{localStorage.setItem('sozora-draft',JSON.stringify({title:title.value,text:draft.value}));saveState('Cihaza kaydedildi','saved');}catch{saveState('Kaydedilemedi · Metni indir','error');}}
 try{const saved=JSON.parse(localStorage.getItem('sozora-draft')||'null');if(saved){draft.value=String(saved.text||'');title.value=String(saved.title||'');saveState('Cihaza kaydedildi','saved');}}catch{}
 function empty(container){const div=node('div','empty-analysis');div.append(node('p','','Henüz metin yok.'));container.append(div);}
-function syncEndings(){
-  const mirror=$('ending-mirror');
-  mirror.style.width=draft.clientWidth+'px';
-  mirror.style.transform=`translate(${-draft.scrollLeft}px,${-draft.scrollTop}px)`;
-  const viewport=draft.getBoundingClientRect();
-  for(const button of mirror.querySelectorAll('button')){const r=button.getBoundingClientRect();button.tabIndex=r.top>=viewport.top&&r.bottom<=viewport.bottom?0:-1;}
-}
+const visibleEndings=new IntersectionObserver(entries=>{for(const entry of entries)entry.target.tabIndex=entry.isIntersecting&&entry.intersectionRatio>=.99?0:-1;},{root:$('ending-overlay'),threshold:[0,1]});
+let mirroredLines=[];
+function syncEndings(){const mirror=$('ending-mirror');mirror.style.width=draft.clientWidth+'px';mirror.style.transform=`translate(${-draft.scrollLeft}px,${-draft.scrollTop}px)`;}
 function mirrorText(text){const span=node('span','',text);span.setAttribute('aria-hidden','true');return span;}
-function renderEndings(){
-  const mirror=$('ending-mirror');mirror.replaceChildren();let offset=0;
-  for(const ending of lineEndings(draft.value)){
-    mirror.append(mirrorText(draft.value.slice(offset,ending.start)));
-    const button=node('button','ending-word',ending.word);button.type='button';
-    button.setAttribute('aria-label',`${ending.word} için kafiye bul`);
-    button.onclick=()=>{$('rhyme-query').value=ending.word;$('rhyme-kind').value='all';openTool($('nav-rhyme'));search();};
-    mirror.append(button);offset=ending.end;
-  }
-  mirror.append(mirrorText(draft.value.slice(offset)+'\u200b'));syncEndings();
+function endingLine(text){
+ const row=node('span');let offset=0;
+ for(const ending of lineEndings(text)){
+  row.append(mirrorText(text.slice(offset,ending.start)));
+  const button=node('button','ending-word',ending.word);button.type='button';button.tabIndex=-1;button.setAttribute('aria-label',`${ending.word} için kafiye bul`);
+  button.onpointerdown=e=>e.preventDefault();
+  button.onclick=()=>{const position={start:draft.selectionStart,end:draft.selectionEnd,direction:draft.selectionDirection,scroll:draft.scrollTop};$('rhyme-query').value=ending.word;$('rhyme-kind').value='all';openTool($('nav-rhyme'));returnToDraft=position;search();$('rhyme-query').focus({preventScroll:true});};
+  row.append(button);visibleEndings.observe(button);offset=ending.end;
+ }
+ row.append(mirrorText(text.slice(offset)));return {text,element:row};
 }
+function renderEndings(){
+ const mirror=$('ending-mirror'),lines=draft.value.match(/[^\n]*\n|[^\n]+$/g)||[''];let start=0,end=mirroredLines.length,newEnd=lines.length;
+ while(start<end&&start<newEnd&&mirroredLines[start].text===lines[start])start++;
+ while(end>start&&newEnd>start&&mirroredLines[end-1].text===lines[newEnd-1]){end--;newEnd--;}
+ for(let i=start;i<end;i++){for(const button of mirroredLines[i].element.querySelectorAll('button'))visibleEndings.unobserve(button);mirroredLines[i].element.remove();}
+ const additions=lines.slice(start,newEnd).map(endingLine),fragment=document.createDocumentFragment();for(const row of additions)fragment.append(row.element);
+ mirror.insertBefore(fragment,mirroredLines[end]?.element||null);mirroredLines.splice(start,end-start,...additions);syncEndings();
+}
+
 draft.addEventListener('scroll',syncEndings);
 new ResizeObserver(syncEndings).observe(draft);
 document.fonts.ready.then(syncEndings);
-function render(){
-  renderEndings();
-  const text=draft.value,rows=analyze(text),active=rows.filter(x=>x.line.trim());
-  $('word-count').textContent=words(text).length;$('line-count').textContent=active.length;$('syllable-count').textContent=countSyllables(text)+(active.some(row=>row.uncertain)?'+':'');$('syllable-count').title=active.some(row=>row.uncertain)?'Sayı ve kısaltmalar sayılmadı; toplam eksik olabilir.':'';
+let lineStats=new Map();
+function render(updateEndings=true){
+  if(updateEndings)renderEndings();
+  const text=draft.value,nextStats=new Map();let wordCount=0,lineCount=0,syllablesCount=0,uncertain=false;
+  for(const line of text.split('\n')){let stats=lineStats.get(line)||nextStats.get(line);if(!stats){const row=analyze(line)[0];stats={words:words(line).length,syllables:row.syllables,uncertain:row.uncertain,active:!!line.trim()};}nextStats.set(line,stats);wordCount+=stats.words;syllablesCount+=stats.syllables;lineCount+=Number(stats.active);uncertain ||= stats.uncertain;}
+  lineStats=nextStats;$('word-count').textContent=wordCount;$('line-count').textContent=lineCount;$('syllable-count').textContent=syllablesCount+(uncertain?'+':'');$('syllable-count').title=uncertain?'Sayı ve kısaltmalar sayılmadı; toplam eksik olabilir.':'';
+  if($('drawer-analysis').hidden)return;
+  const rows=analyze(text),active=rows.filter(x=>x.line.trim());
   $('scheme').textContent=active.length?rows.map(x=>x.line.trim()?x.letter:' / ').join(' ').trim():'—';
   const scheme=$('analysis-rows'), syllables=$('syllable-rows');scheme.replaceChildren();syllables.replaceChildren();
   if(!active.length){empty(scheme);empty(syllables);return;}
@@ -47,7 +56,7 @@ function render(){
     const reader=node('div','analysis-row');reader.append(node('span','row-number',i+1),node('div','row-text',words(row.line).map(w=>/\d/u.test(w)?w:syllabify(w).join('·')||w).join('  /  ')),node('span','row-syllables',row.syllables+(row.uncertain?'+':'')));syllables.append(reader);
   });
 }
-draft.addEventListener('input',()=>{clearTimeout(saveTimer);saveState('Kaydediliyor…','saving');saveTimer=setTimeout(save,250);render();});title.addEventListener('input',save);render();
+draft.addEventListener('input',()=>{returnToDraft=null;clearTimeout(saveTimer);saveState('Kaydediliyor…','saving');saveTimer=setTimeout(save,250);render();});title.addEventListener('input',save);render();
 let themeChoice=document.documentElement.dataset.theme==='dark'?'dark':'light';
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 function haptic(pattern = 8) {
@@ -107,10 +116,10 @@ try{const settings=JSON.parse(localStorage.getItem('lirik-metronome-settings')||
 const soundNames={classic:'Klasik',low:'Ahşap',high:'Hi-hat'};
 function updateSoundPicker(){const selected=$('metronome-sound').value;$('sound-name').textContent=soundNames[selected];document.querySelectorAll('[data-sound]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.sound===selected)));}
 updateSoundPicker();
-for(const button of document.querySelectorAll('[data-sound]'))button.onclick=()=>{$('metronome-sound').value=button.dataset.sound;configure();updateSoundPicker();$('sound-picker').open=false;$('sound-picker').querySelector('summary').focus();try{localStorage.setItem('lirik-metronome-sound',button.dataset.sound);}catch{}};
+for(const button of document.querySelectorAll('[data-sound]'))button.onclick=()=>{$('metronome-sound').value=button.dataset.sound;configure();updateSoundPicker();$('sound-status').textContent=soundNames[button.dataset.sound]+' sesi seçildi.';$('sound-picker').open=false;$('sound-picker').querySelector('summary').focus();try{localStorage.setItem('lirik-metronome-sound',button.dataset.sound);}catch{}};
 const previewEngine=new RhythmEngine();let previewTimer,previewAttempt=0;
 function stopPreview(){previewAttempt++;clearTimeout(previewTimer);previewEngine.stop();document.querySelectorAll('[data-preview]').forEach(button=>button.setAttribute('aria-pressed','false'));}
-for(const button of document.querySelectorAll('[data-preview]'))button.onclick=async()=>{stopPreview();const attempt=previewAttempt;try{if(engine.running)engine.stop();button.setAttribute('aria-pressed','true');previewEngine.configure({bpm:240,volume:$('volume').value/100,tone:button.dataset.preview});await previewEngine.start();if(attempt===previewAttempt)previewTimer=setTimeout(stopPreview,450);}catch(e){if(attempt===previewAttempt){stopPreview();notify(e.message);}}};
+for(const button of document.querySelectorAll('[data-preview]'))button.onclick=async()=>{stopPreview();const attempt=previewAttempt;try{if(engine.running)engine.stop();button.setAttribute('aria-pressed','true');previewEngine.configure({bpm:240,volume:$('volume').value/100,tone:button.dataset.preview});await previewEngine.start();if(attempt===previewAttempt)$('sound-status').textContent=soundNames[button.dataset.preview]+' sesi önizleniyor.';if(attempt===previewAttempt)previewTimer=setTimeout(stopPreview,450);}catch(e){if(attempt===previewAttempt){stopPreview();notify(e.message);}}};
 $('play').onclick=async()=>{stopPreview();if(engine.running){engine.stop();return;}$('play').disabled=true;try{configure();await engine.start();}catch(e){notify(e.message);engine.stop();}finally{$('play').disabled=false;}};
 $('sound-picker').addEventListener('keydown',e=>{if(e.key==='Escape'&&$('sound-picker').open){e.preventDefault();e.stopPropagation();$('sound-picker').open=false;$('sound-picker').querySelector('summary').focus();}});
 document.addEventListener('click',e=>{if(!e.target.closest('#sound-picker'))$('sound-picker').open=false;});
@@ -138,8 +147,8 @@ let activeTool=null, toolOpeningTimer;
 function finishToolOpening(){clearTimeout(toolOpeningTimer);$('tool-dock').classList.remove('is-opening');}
 document.querySelector('.workspace').addEventListener('transitionend',e=>{if(e.target===e.currentTarget)finishToolOpening();});
 $('tool-dock').hidden=false;$('tool-dock').inert=true;
-function closeTools(restoreFocus=false){finishToolOpening();if(!activeTool)return;const opener=activeTool;$(opener.dataset.open).hidden=true;opener.setAttribute('aria-expanded','false');document.querySelector('.workspace').classList.remove('has-tools');$('tool-dock').inert=true;activeTool=null;if(restoreFocus)opener.focus();}
-function openTool(opener){if(activeTool===opener)return;closeTools();activeTool=opener;$(opener.dataset.open).hidden=false;document.querySelector('.workspace').classList.add('has-tools');$('tool-dock').inert=false;opener.setAttribute('aria-expanded','true');if(!reducedMotion.matches){$('tool-dock').classList.add('is-opening');toolOpeningTimer=setTimeout(finishToolOpening,300);}}
+function closeTools(restoreFocus=false){finishToolOpening();if(!activeTool)return;const opener=activeTool;$(opener.dataset.open).hidden=true;opener.setAttribute('aria-expanded','false');document.querySelector('.workspace').classList.remove('has-tools');$('tool-dock').inert=true;activeTool=null;if(restoreFocus&&returnToDraft){const position=returnToDraft;draft.focus({preventScroll:true});draft.setSelectionRange(position.start,position.end,position.direction);draft.scrollTop=position.scroll;syncEndings();}else if(restoreFocus)opener.focus();returnToDraft=null;}
+function openTool(opener){if(activeTool===opener)return;closeTools();activeTool=opener;$(opener.dataset.open).hidden=false;document.querySelector('.workspace').classList.add('has-tools');$('tool-dock').inert=false;opener.setAttribute('aria-expanded','true');if(opener.id==='nav-analysis')render(false);if(!reducedMotion.matches){$('tool-dock').classList.add('is-opening');toolOpeningTimer=setTimeout(finishToolOpening,300);}}
 for(const opener of openers){
  const panel=$(opener.dataset.open);$('tool-dock').append(panel);
  opener.onclick=event=>{if(activeTool===opener)closeTools();else{openTool(opener);if(event.detail===0)panel.querySelector('input,button:not([data-close]),[role=tab]')?.focus({preventScroll:true});}};
@@ -148,3 +157,7 @@ for(const opener of openers){
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.querySelector('dialog[open]'))closeTools(true);});
 
 $('panel-size').onclick=()=>{const compact=document.querySelector('.workspace').classList.toggle('compact-tools');$('panel-size').textContent=compact?'Araç alanını büyüt':'Söz alanını büyüt';$('panel-size').setAttribute('aria-expanded',String(!compact));};
+
+// visualViewport follows the keyboard on mobile browsers; short desktop windows stay unchanged.
+function fitKeyboard(){const viewport=window.visualViewport;const compact=matchMedia('(max-width:700px)').matches&&((viewport?.height||innerHeight)<480);document.documentElement.classList.toggle('keyboard-open',compact);document.documentElement.style.setProperty('--editor-viewport',`${viewport?.height||innerHeight}px`);}
+window.visualViewport?.addEventListener('resize',fitKeyboard);window.addEventListener('resize',fitKeyboard);document.addEventListener('focusin',fitKeyboard);document.addEventListener('focusout',()=>requestAnimationFrame(fitKeyboard));fitKeyboard();

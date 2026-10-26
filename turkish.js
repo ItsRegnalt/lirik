@@ -3,7 +3,15 @@ const VOWELS = new Set([...'aeıioöuüāēɯīōȫūǖ']);
 const fold = s => s.normalize('NFC').replace(/[âîû]/g, c => ({'â':'a','î':'i','û':'u'}[c]));
 
 export function normalize(text = '') { return String(text).normalize('NFC').toLocaleLowerCase('tr-TR').normalize('NFC'); }
-export function words(text = '') { return String(text).normalize('NFC').match(/[\p{L}\p{N}]+(?:['’][\p{L}\p{N}]+)*/gu) || []; }
+// Keep dotted initialisms together so counting and analysis can flag them.
+export function words(text = '') { return String(text).normalize('NFC').match(/(?:[\p{L}\p{N}](?:\.[\p{L}\p{N}]){1,}\.?|[\p{L}\p{N}]+(?:['’][\p{L}\p{N}]+)*)/gu) || []; }
+
+function isAcronym(token='') {
+  const value=String(token).trim();
+  return /^[A-ZÇĞİÖŞÜ](?:\.?[A-ZÇĞİÖŞÜ]){1,}\.?$/u.test(value);
+}
+function isDottedInitialism(token='') { return /^[\p{L}](?:\.[\p{L}]){1,}\.?$/u.test(String(token).trim()); }
+function isUncertain(token='') { return /\d/u.test(token)||isAcronym(token)||isDottedInitialism(token); }
 
 export function syllabify(word = '') {
   const s=normalize(lexicon[normalize(word)]||word).replace(/['’]/g,''); const c=[...s];
@@ -19,7 +27,7 @@ export function syllabify(word = '') {
   }
   out.push(c.slice(start).join('')); return out;
 }
-export function countSyllables(text='') { return words(text).reduce((n,w)=>n+( /\d/u.test(w) ? 0 : syllabify(lexicon[normalize(w)]||w).length),0); }
+export function countSyllables(text='') { return words(text).reduce((n,w)=>n+(isUncertain(w) ? 0 : syllabify(lexicon[normalize(w)]||w).length),0); }
 
 // Curated, ordinary Turkish vocabulary, kept local for offline use. This is a suggestion
 // corpus, not a comprehensive dictionary or semantic/morphological analyzer.
@@ -32,6 +40,8 @@ const morph = new Map([
 ]);
 const roots = new Set(corpus.map(normalize));
 const dictionary = new Set([...roots,...Object.keys(lexicon)]);
+// Hand-picked common suggestions for useful ordering; this is not a frequency corpus.
+const commonSuggestions = new Set(`ateş bağ bile çağ çile deniz dile güzel hayat kanat kar kardeş temiz umut yağ`.split(/\s+/).map(normalize));
 
 function tail(w) { return fold(normalize(w).replace(/['’]/g,'')).replace(/[^\p{L}]+$/gu,''); }
 function sharedEnding(a,b) { let n=0; while(n<a.length&&n<b.length&&a.at(-1-n)===b.at(-1-n)) n++; return a.slice(a.length-n); }
@@ -47,21 +57,21 @@ export function soundKey(w) {
   return tail(lexicon[normalize(w)]||w).replace(/([aeıioöuü])ğ([aeıioöuü])/g,(all,a,b)=>a===b?long[a]:all)
     .replace(/([aeıioöuü])ğ(?=$|[^aeıioöuüāēɯīōȫūǖ])/g,(_,v)=>long[v]);
 }
-function endSound(w) { return soundKey(w); }
+function endSound(w) { return isAcronym(w)||isDottedInitialism(w)||/\d/u.test(w)?'':soundKey(w); }
 
 // Cache sound keys once; each keystroke searches compatible final sounds.
 const rhymeIndex=new Map();
 for(const word of dictionary){const sound=soundKey(word),key=sound.at(-1);if(!rhymeIndex.has(key))rhymeIndex.set(key,[]);rhymeIndex.get(key).push({word,sound,syllables:countSyllables(word)});}
 export function findRhymes(query,{kind='all',limit=40}={}) {
-  // Uppercase-only tokens are usually acronyms, not pronounceable words.
-  if (/^[A-ZÇĞİÖŞÜ]{2,}$/u.test(String(query).trim())) return [];
+  // Uppercase initialisms, including dotted forms, do not have a known reading.
+  if (isAcronym(query)||isDottedInitialism(query)) return [];
   const q=tail(query);if(!q)return [];
   const sound=endSound(q);
   return (rhymeIndex.get(sound.at(-1))||[]).filter(x=>tail(x.word)!==q).map(({word,sound:ending,syllables})=>{
     const common=sharedEnding(sound,ending),type=rhymeType(sound,ending);
     return {word,ending:common||ending,type,syllables,score:common.length};
   }).filter(x=>x.type&&(kind==='all'||x.type===kind))
-    .sort((a,b)=>b.score-a.score||Number(roots.has(b.word))-Number(roots.has(a.word))||a.word.localeCompare(b.word,'tr')).slice(0,Math.max(0,limit))
+    .sort((a,b)=>Number(commonSuggestions.has(b.word))-Number(commonSuggestions.has(a.word))||b.score-a.score||Number(roots.has(b.word))-Number(roots.has(a.word))||a.word.localeCompare(b.word,'tr')).slice(0,Math.max(0,limit))
     .map(({score,...x})=>x);
 }
 
@@ -116,7 +126,11 @@ function stanza(rowGroup){
     if(best<0){const g={ending:end,rows:[r],letter:label(groups.length)}; r.letter=g.letter;r.type='';groups.push(g);}
     else {r.letter=groups[best].letter;r.type=rhymeType(end,groups[best].ending);groups[best].rows.push(r);}
   }
-  for(const g of groups) for(const r of g.rows){r.letter=g.letter;r.type=g.rows.length>1?rhymeType(g.rows.map(x=>x.rhyme).reduce(sharedEnding),g.rows.map(x=>x.rhyme).reduce(sharedEnding)):'';}
+  for(const g of groups){
+    const common=g.rows.length>1?g.rows.map(x=>x.rhyme).reduce(sharedEnding):'';
+    const type=common?rhymeType(common,common):'';
+    for(const r of g.rows){r.letter=g.letter;r.type=type;}
+  }
 }
 
 export function analyze(text='',options={}) {
@@ -124,7 +138,7 @@ export function analyze(text='',options={}) {
   const flush=()=>{if(group.length){stanza(group);result.push(...group);group=[];}};
   for(const line of lines){
     if(!line.trim()){flush();result.push({line,word:'',syllables:0,uncertain:false,letter:'-',rhyme:'',redif:'',type:'',note:''});continue;}
-    const word=terminal(line), uncertain=words(line).some(w=>/\d/u.test(w)||/^[A-ZÇĞİÖŞÜ]{2,}$/.test(w));
+    const word=terminal(line), uncertain=words(line).some(w=>isUncertain(w)||isDottedInitialism(w));
     group.push({line,word,syllables:countSyllables(line),uncertain,letter:'',rhyme:word,redif:'',type:'',note:uncertain?'Sayı ve büyük harfli kısaltmaların telaffuzu belirsiz olduğu için hece toplamına katılmaz; bu dize ve kıtanın hece toplamı eksik olabilir.':''});
   }
   flush(); return result;

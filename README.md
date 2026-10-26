@@ -15,7 +15,7 @@ Türkçe şarkı sözleri için sade bir söz defteri.
 
 Çevrimdışı kullanım dosyalarının sıkıştırılmış indirme boyutu yaklaşık **510 KB**, açılmış toplamı yaklaşık **845 KB**. Tarayıcının ek depolama alanı ve kaydettiğin sözler bu değerlere dahil değildir. Boyutlar sürüme göre değişebilir; RAM kullanımını göstermez.
 
-Kafiye önerileri Zemberek kaynaklı 26.615 kelime ve yerel ses kuralları kullanır. Tam Zemberek dil çözümleyicisi çalıştırılmaz. Redif, anlam, yöresel söyleyiş, sayı ve kısaltmalarda sonuçlar kesin değildir.
+Kafiye önerileri Zemberek kaynaklı 26.615 kelime ve yerel ses kuralları kullanır. Elle seçilmiş gündelik kelimeler önerilerde öne çıkarılır; bu sıralama istatistiksel kullanım sıklığı değildir. Tam Zemberek dil çözümleyicisi çalıştırılmaz. Noktalı kısaltmalar tek kelime olarak tanınır; belirsiz okunuşları hece toplamına katılmaz. Redif, anlam, yöresel söyleyiş, sayı ve kısaltmalarda sonuçlar kesin değildir.
 
 ## Geliştirme
 
