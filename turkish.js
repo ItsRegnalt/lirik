@@ -1,3 +1,4 @@
+import {lexicon} from './lexicon.js';
 const VOWELS = new Set([...'aeıioöuüāēɯīōȫūǖ']);
 const fold = s => s.normalize('NFC').replace(/[âîû]/g, c => ({'â':'a','î':'i','û':'u'}[c]));
 
@@ -5,7 +6,7 @@ export function normalize(text = '') { return String(text).normalize('NFC').toLo
 export function words(text = '') { return String(text).normalize('NFC').match(/[\p{L}\p{N}]+(?:['’][\p{L}\p{N}]+)*/gu) || []; }
 
 export function syllabify(word = '') {
-  const s=normalize(word).replace(/['’]/g,''); const c=[...s];
+  const s=normalize(lexicon[normalize(word)]||word).replace(/['’]/g,''); const c=[...s];
   const nuclei=c.flatMap((x,i)=>VOWELS.has(fold(x))?[i]:[]);
   if (!nuclei.length) return [];
   const out=[]; let start=0;
@@ -18,7 +19,7 @@ export function syllabify(word = '') {
   }
   out.push(c.slice(start).join('')); return out;
 }
-export function countSyllables(text='') { return words(text).reduce((n,w)=>n+( /\d/u.test(w) ? 0 : syllabify(w).length),0); }
+export function countSyllables(text='') { return words(text).reduce((n,w)=>n+( /\d/u.test(w) ? 0 : syllabify(lexicon[normalize(w)]||w).length),0); }
 
 // Curated, ordinary Turkish vocabulary, kept local for offline use. This is a suggestion
 // corpus, not a comprehensive dictionary or semantic/morphological analyzer.
@@ -30,7 +31,7 @@ const morph = new Map([
  ['lerce',['ler','ce']],['ca',['ca']],['ce',['ce']],['ım',['ım']],['im',['im']],['um',['um']],['üm',['üm']]
 ]);
 const roots = new Set(corpus.map(normalize));
-const dictionary = new Set([...roots]);
+const dictionary = new Set([...roots,...Object.keys(lexicon)]);
 
 function tail(w) { return fold(normalize(w).replace(/['’]/g,'')).replace(/[^\p{L}]+$/gu,''); }
 function sharedEnding(a,b) { let n=0; while(n<a.length&&n<b.length&&a.at(-1-n)===b.at(-1-n)) n++; return a.slice(a.length-n); }
@@ -43,18 +44,22 @@ function rhymeType(a,b) {
 // Shortcut: regional speech and other ğ contexts need a pronunciation lexicon.
 export function soundKey(w) {
   const long={'a':'ā','e':'ē','ı':'ɯ','i':'ī','o':'ō','ö':'ȫ','u':'ū','ü':'ǖ'};
-  return tail(w).replace(/([aeıioöuü])ğ([aeıioöuü])/g,(all,a,b)=>a===b?long[a]:all)
+  return tail(lexicon[normalize(w)]||w).replace(/([aeıioöuü])ğ([aeıioöuü])/g,(all,a,b)=>a===b?long[a]:all)
     .replace(/([aeıioöuü])ğ(?=$|[^aeıioöuüāēɯīōȫūǖ])/g,(_,v)=>long[v]);
 }
 function endSound(w) { return soundKey(w); }
 
+// Cache sound keys once; each keystroke searches compatible final sounds.
+const rhymeIndex=new Map();
+for(const word of dictionary){const sound=soundKey(word),key=sound.at(-1);if(!rhymeIndex.has(key))rhymeIndex.set(key,[]);rhymeIndex.get(key).push({word,sound,syllables:countSyllables(word)});}
 export function findRhymes(query,{kind='all',limit=40}={}) {
-  const q=tail(query); if(!q) return [];
-  return [...dictionary].filter(w=>tail(w)!==q).map(word=>{
-    const ending=endSound(word), common=sharedEnding(endSound(q),ending), type=rhymeType(endSound(q),ending);
-    return {word,ending:common||ending,type,syllables:syllabify(word).length,score:common.length};
-  }).filter(x=>x.type && (kind==='all'||x.type===kind))
-    .sort((a,b)=>b.score-a.score||a.word.localeCompare(b.word,'tr')).slice(0,Math.max(0,limit))
+  const q=tail(query);if(!q)return [];
+  const sound=endSound(q);
+  return (rhymeIndex.get(sound.at(-1))||[]).filter(x=>tail(x.word)!==q).map(({word,sound:ending,syllables})=>{
+    const common=sharedEnding(sound,ending),type=rhymeType(sound,ending);
+    return {word,ending:common||ending,type,syllables,score:common.length};
+  }).filter(x=>x.type&&(kind==='all'||x.type===kind))
+    .sort((a,b)=>b.score-a.score||Number(roots.has(b.word))-Number(roots.has(a.word))||a.word.localeCompare(b.word,'tr')).slice(0,Math.max(0,limit))
     .map(({score,...x})=>x);
 }
 

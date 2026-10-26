@@ -102,7 +102,7 @@ const engine=new RhythmEngine(beat=>{[...document.querySelectorAll('.beat-dots i
 function configure(){engine.configure({bpm:$('bpm').value,volume:$('volume').value/100,tone:$('metronome-sound').value});}
 function tempo(value){const n=Math.round(Math.min(240,Math.max(30,Number(value)||90)));$('bpm').value=n;$('tempo-range').value=n;configure();}
 $('bpm').onchange=()=>tempo($('bpm').value);$('tempo-range').oninput=()=>tempo($('tempo-range').value);$('tempo-up').onclick=()=>tempo(Number($('bpm').value)+1);$('tempo-down').onclick=()=>tempo(Number($('bpm').value)-1);$('volume').oninput=configure;
-try{const tone=localStorage.getItem('lirik-metronome-sound');if(['studio','wood','digital'].includes(tone))$('metronome-sound').value=tone;}catch{}
+try{const tone=localStorage.getItem('lirik-metronome-sound');if(['classic','low','high'].includes(tone))$('metronome-sound').value=tone;}catch{}
 $('metronome-sound').onchange=()=>{configure();try{localStorage.setItem('lirik-metronome-sound',$('metronome-sound').value);}catch{}};
 $('play').onclick=async()=>{if(engine.running){engine.stop();return;}$('play').disabled=true;try{configure();await engine.start();}catch(e){notify(e.message);engine.stop();}finally{$('play').disabled=false;}};
 let taps=[];$('tap').onclick=()=>{const now=performance.now();if(now-(taps.at(-1)||0)>2500)taps=[];taps.push(now);taps=taps.slice(-6);if(taps.length>1){const avg=(taps.at(-1)-taps[0])/(taps.length-1);tempo(60000/avg);}else notify('Aynı ritimde birkaç kez dokun.');};

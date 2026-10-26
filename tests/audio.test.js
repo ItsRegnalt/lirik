@@ -15,6 +15,6 @@ test('scheduler uses audio time and recovers without late bursts',()=>{
 });
 
 test('sound profiles accept only supported voices',()=>{
- const e=new RhythmEngine();for(const tone of ['studio','wood','digital']){e.configure({tone});assert.equal(e.tone,tone);}
- e.configure({tone:'unknown'});assert.equal(e.tone,'studio');
+ const e=new RhythmEngine();for(const tone of ['classic','low','high']){e.configure({tone});assert.equal(e.tone,tone);}
+ e.configure({tone:'unknown'});assert.equal(e.tone,'classic');
 });

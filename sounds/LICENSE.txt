@@ -1,0 +1,6 @@
+Metronom SoundFont (c) 2021 mirabilos, CC0.
+Public-domain samples courtesy Paul Davis, used in Ardour, MusE and MuseScore.
+Source: http://www.mirbsd.org/~tg/soundfont/Metronom.sf2
+SHA256: bc4721e7f769d9cccb989f38cca70f1ab2ccf461a246d3c30aafb0a3eec42eed
+Extracted unchanged to mono 16-bit PCM WAV from the SoundFont sample data.
+CC0: https://creativecommons.org/publicdomain/zero/1.0/legalcode

@@ -9,10 +9,10 @@ test('zero vowels means zero syllables; apostrophe is not a syllable',()=>{asser
 test('counts â î û as vowel nuclei',()=>{assert.equal(countSyllables('kârî bir'),3);});
 test('numbers and abbreviations report uncertainty',()=>{const r=analyze('2026\nTR');assert.match(r[0].note,/belirsiz/);assert.match(r[1].note,/belirsiz/);});
 test('physical blank lines preserved and stanza split',()=>{assert.equal(analyze('gül\n\nçöl').length,3);});
-test('rhyme sound includes all final sounds',()=>{assert.ok(findRhymes('deniz').some(x=>x.word==='temiz'&&x.type==='tam'));assert.ok(findRhymes('güneş').some(x=>x.word==='ateş'&&x.type==='tam'));assert.ok(findRhymes('gül').some(x=>x.word==='çöl'&&x.type==='yarım'));});
+test('rhyme sound includes all final sounds',()=>{assert.ok(findRhymes('deniz').some(x=>x.word==='temiz'&&x.type==='tam'));assert.ok(findRhymes('güneş').some(x=>x.word==='ateş'&&x.type==='tam'));assert.ok(findRhymes('gül',{limit:30000}).some(x=>x.word==='çöl'&&x.type==='yarım'));});
 test('rhyme suggestions rank stronger shared endings first',()=>{const r=findRhymes('güneş');assert.equal(r[0].word,'ateş');});
 test('offline rhyme corpus returns useful suggestions',()=>{for(const q of ['taş','gül','göz','yol','deniz','güneş','kalem','bahar','umut','zaman'])assert.ok(findRhymes(q).length>0,q);});
-test('half, full and rich rhyme types are distinguished',()=>{assert.equal(findRhymes('gül').find(x=>x.word==='çöl').type,'yarım');assert.equal(findRhymes('deniz').find(x=>x.word==='temiz').type,'tam');assert.equal(findRhymes('ışık').find(x=>x.word==='aşık').type,'zengin');});
+test('half, full and rich rhyme types are distinguished',()=>{assert.equal(findRhymes('gül',{limit:30000}).find(x=>x.word==='çöl').type,'yarım');assert.equal(findRhymes('deniz').find(x=>x.word==='temiz').type,'tam');assert.equal(findRhymes('ışık').find(x=>x.word==='aşık').type,'zengin');});
 test('abab scheme',()=>{const r=analyze('deniz\nyol\ntemiz\nkol');assert.deepEqual(r.map(x=>x.letter),['A','B','A','B']);});
 test('aabb scheme',()=>{const r=analyze('deniz\ntemiz\nyol\nkol');assert.deepEqual(r.map(x=>x.letter),['A','A','B','B']);});
 test('abba scheme',()=>{const r=analyze('deniz\nyol\nkol\ntemiz');assert.deepEqual(r.map(x=>x.letter),['A','B','B','A']);});
@@ -47,3 +47,5 @@ test('sound keys stay stable and Turkish vowel distinctions survive',()=>{
  for(const w of ['dağ','ağaç','değil','soğuk','güneş'])assert.equal(soundKey(soundKey(w)),soundKey(w));
  for(const [a,b] of [['ışık','işik'],['gül','gul'],['şiş','sis']])assert.notEqual(soundKey(a),soundKey(b));
 });
+
+test('Zemberek vocabulary and explicit pronunciations work offline',()=>{assert.ok(findRhymes('mikroskop',{limit:30000}).some(x=>x.word==='teleskop'));assert.equal(countSyllables('gram'),2);assert.equal(soundKey('cc'),'cece');});
