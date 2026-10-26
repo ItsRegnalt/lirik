@@ -5,6 +5,7 @@ import {isHeading,lyricsText,cleanAlternatives,alternativesAppendix} from './wri
 import {initWriting} from './writing-ui.js';
 const $=id=>document.getElementById(id), draft=$('draft'), title=$('draft-title');
 let toastTimer,saveTimer,pendingReplace,installPrompt,returnToDraft,writingTools;
+// Keep legacy alternatives available in downloads without exposing the removed tool.
 let variantGroups=[];
 function notify(message){$('toast').textContent=message;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),3500);}
 function node(tag,cls,text){const el=document.createElement(tag);if(cls)el.className=cls;if(text!==undefined)el.textContent=text;return el;}
@@ -159,10 +160,8 @@ for(const opener of openers){
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.querySelector('dialog[open]'))closeTools(true);});
 
-$('panel-size').onclick=()=>{const compact=document.querySelector('.workspace').classList.toggle('compact-tools');$('panel-size').textContent=compact?'Araç alanını büyüt':'Söz alanını büyüt';$('panel-size').setAttribute('aria-expanded',String(!compact));};
-
 // visualViewport follows the keyboard on mobile browsers; short desktop windows stay unchanged.
 function fitKeyboard(){const viewport=window.visualViewport;const compact=matchMedia('(max-width:700px)').matches&&((viewport?.height||innerHeight)<480);document.documentElement.classList.toggle('keyboard-open',compact);document.documentElement.style.setProperty('--editor-viewport',`${viewport?.height||innerHeight}px`);}
 window.visualViewport?.addEventListener('resize',fitKeyboard);window.addEventListener('resize',fitKeyboard);document.addEventListener('focusin',fitKeyboard);document.addEventListener('focusout',()=>requestAnimationFrame(fitKeyboard));fitKeyboard();
 
-writingTools=initWriting({draft,getGroups:()=>variantGroups,save,notify,copyText});
+writingTools=initWriting({draft,save,notify});

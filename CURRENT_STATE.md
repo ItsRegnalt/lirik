@@ -75,3 +75,9 @@
 - Yayın dosyaları 873.957 bayt ham / ayrı gzip toplamı 522.739 bayt ölçüldü; sayfa ve README yaklaşık 515 KB indirme / 855 KB çevrimdışı dosya olarak yuvarlandı. Sözler ve tarayıcı ekleri hariç; RAM ölçümü değil.
 - Kanıt: 52/52 Node testi; verify-writing.cjs Chrome testinde eski taslak, alternatif geçişi/yenileme/arşiv, bölüm taşıma/çoğaltma, indirme, iptal, XSS, 320×568 / 375×288 / 1280×900 yerleşim ve çevrimdışı yeniden açma geçti. Gerçek telefon klavyesi ve iOS denenmedi.
 - Geri dönüş: 98fea50. Yedek: backup/2026-10-26-writing-tools/. RTK global ayarları değiştirilmedi.
+
+## Yazma kontrollerinin sadeleştirilmesi — 26 Ekim 2026
+- Dize alternatifleri menüsü ve söz alanını büyüt/küçült kontrolü kaldırıldı. Kıta, Nakarat, Köprü ve bölüm işlemlerini geri alma korundu.
+- Önceden kaydedilmiş alternatifler veri kaybını önlemek için depolamada ve TXT indirmede korunur. Yeni alternatif oluşturma arayüzü yok. Önbellek ve kaynak sürümleri lirik-v18 olarak eşitlendi.
+- Kanıt: 52/52 Node testi; Chrome üzerinde kaldırılan kontroller, bölüm ekleme/geri alma, sayaçlar, eski alternatiflerin indirilmesi, 320×568 / 375×288 / 1280×900 yerleşim ve çevrimdışı yeniden açılış geçti. Tarayıcı hatası görülmedi. Gerçek telefon ve iOS denenmedi.
+- Geri dönüş: c513ddc. Yedek: backup/2026-10-26-remove-writing-controls/. RTK global ayarları değiştirilmedi.

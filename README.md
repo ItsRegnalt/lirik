@@ -5,15 +5,14 @@ Türkçe şarkı sözleri için sade bir söz defteri.
 **[Lirik’i aç](https://itsregnalt.github.io/lirik/)**
 
 - Sözlerin cihazına otomatik kaydedilir; metin olarak indirilebilir.
-- Bir dizeye alternatifler yaz, sakla ve karşılaştırarak değiştir. Önceki hali korunur; silinen dizelerin alternatifleri de kayıtlı kalır. Aynı metindeki dizeler alternatiflerini paylaşır.
-- Kıta, nakarat ve köprü başlıkları ekle; bölümleri taşı veya çoğalt. Başlıklar hece ve uyak hesabına katılmaz. Son dize veya bölüm işlemi, ardından yazıda değişiklik yapmadıysan geri alınabilir.
+- Kıta, nakarat ve köprü başlıkları ekle; bölümleri taşı veya çoğalt. Başlıklar hece ve uyak hesabına katılmaz. Son bölüm işlemi, ardından yazıda değişiklik yapmadıysan geri alınabilir.
 - Dize sonundaki kelimeden kafiye ara; yazarken öneriler güncellenir.
 - Hece sayılarını ve olası uyak düzenini sözlerinle birlikte incele. Sayı ve kısaltma içeren eksik sayımlar `+` ile işaretlenir.
 - Klasik mekanik metronom, ahşap blok veya kapalı hi-hat metronom sesini dinleyerek seç; tempo ve ses tercihlerin saklanır.
-- Küçük ekranda söz alanını büyüt; araçları klavyeyle de kullan.
+- Araçları dokunarak veya klavyeyle kullan.
 - Açık/koyu tema ve ana ekrana ekleme desteği.
 
-İlk çevrimiçi açılış ve önbellek hazırlığı tamamlandıktan sonra araçlar çevrimdışı çalışır. Hazırlık durumu sayfanın altında gösterilir. Ses seçicisindeki hoparlör simgeleri, seçimi değiştirmeden kısa bir önizleme çalar. Tarayıcı verilerini silmek taslağını da siler; önemli sözlerini indirerek sakla. İndirilen TXT dosyası bölüm başlıklarını içerir; kayıtlı dize alternatifleri dosyanın sonuna ayrı bir liste olarak eklenir. Sözü kopyala yalnızca defterdeki metni kopyalar.
+İlk çevrimiçi açılış ve önbellek hazırlığı tamamlandıktan sonra araçlar çevrimdışı çalışır. Hazırlık durumu sayfanın altında gösterilir. Ses seçicisindeki hoparlör simgeleri, seçimi değiştirmeden kısa bir önizleme çalar. Tarayıcı verilerini silmek taslağını da siler; önemli sözlerini indirerek sakla. İndirilen TXT dosyası bölüm başlıklarını içerir. Sözü kopyala yalnızca defterdeki metni kopyalar.
 
 Çevrimdışı kullanım dosyalarının sıkıştırılmış indirme boyutu yaklaşık **515 KB**, açılmış toplamı yaklaşık **855 KB**. Tarayıcının ek depolama alanı ve kaydettiğin sözler bu değerlere dahil değildir. Boyutlar sürüme göre değişebilir; RAM kullanımını göstermez.
 
